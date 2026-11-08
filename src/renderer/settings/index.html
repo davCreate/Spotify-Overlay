@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; object-src 'none'; base-uri 'none'">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spotify Overlay — Settings</title>
+  <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M3 10h2v4H3v-4zm4-4h2v12H7V6zm4-3h2v18h-2V3zm4 5h2v8h-2V8zm4 3h2v2h-2v-2z"/></svg>
+        </div>
+        <div>
+          <div class="brand-name">Spotify Overlay</div>
+          <div class="brand-sub" id="version">Settings</div>
+        </div>
+      </div>
+      <nav id="nav" aria-label="Settings sections"></nav>
+      <div class="sidebar-footer">
+        <div class="status-line"><span class="dot" id="status-dot"></span><span id="status-text">Not connected</span></div>
+        <button class="btn btn-ghost btn-small" id="toggle-overlay" type="button">Hide overlay</button>
+      </div>
+    </aside>
+    <main class="main">
+      <header class="section-header">
+        <h1 id="section-title"></h1>
+        <p id="section-desc"></p>
+      </header>
+      <div id="section-body" class="section-body"></div>
+    </main>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="../../shared/defaults.js"></script>
+  <script src="../../shared/themes.js"></script>
+  <script src="schema.js"></script>
+  <script src="settings.js"></script>
+</body>
+</html>

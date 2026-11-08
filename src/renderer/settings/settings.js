@@ -1,0 +1,648 @@
+/*
+ * Spotify Overlay - settings window.
+ * Renders sections from schema.js and keeps every control in sync with the main process.
+ */
+(function () {
+  'use strict';
+
+  const api = window.overlayAPI;
+  const { SECTIONS } = window.SO_SCHEMA;
+  const { PRESETS, FONTS, getEffectiveTheme, findTheme } = window.SO_THEMES;
+  const { getPath } = window.SO_DEFAULTS;
+
+  const REPO_URL = 'https://github.com/davCreate/Spotify-Overlay';
+  const DASHBOARD_URL = 'https://developer.spotify.com/dashboard';
+
+  let settings = null;
+  let theme = null;
+  let auth = { connected: false };
+  let obsStatus = { running: false, port: 4777, error: null };
+  let shortcutStatus = {};
+  let appInfo = { version: '', platform: api.platform };
+  let overlayVisible = true;
+  let currentSection = 'account';
+  let bindings = [];
+  let customUpdaters = [];
+
+  /* ---------------------------------------------------------------- DOM helpers */
+
+  function h(tag, attrs, ...children) {
+    const node = document.createElement(tag);
+    if (attrs) {
+      for (const [k, v] of Object.entries(attrs)) {
+        if (v === undefined || v === null || v === false) continue;
+        if (k === 'class') node.className = v;
+        else if (k === 'text') node.textContent = v;
+        else if (k.startsWith('on') && typeof v === 'function') node.addEventListener(k.slice(2), v);
+        else if (k === 'style' && typeof v === 'object') Object.assign(node.style, v);
+        else node.setAttribute(k, v === true ? '' : v);
+      }
+    }
+    for (const c of children.flat()) {
+      if (c === null || c === undefined || c === false) continue;
+      node.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+    }
+    return node;
+  }
+
+  function svgIcon(d) {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('aria-hidden', 'true');
+    const path = document.createElementNS(ns, 'path');
+    path.setAttribute('d', d);
+    svg.appendChild(path);
+    return svg;
+  }
+
+  let toastTimer = null;
+  function toast(message, isError) {
+    const t = document.getElementById('toast');
+    t.textContent = message;
+    t.classList.toggle('error', Boolean(isError));
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), isError ? 5000 : 2200);
+  }
+
+  function errMsg(err) {
+    const m = (err && err.message) || String(err);
+    // ipcRenderer.invoke prefixes errors with "Error invoking remote method '...': Error: "
+    return m.replace(/^Error invoking remote method '[^']+': (Error: )?/, '');
+  }
+
+  async function run(fn, okMessage) {
+    try {
+      const r = await fn();
+      if (okMessage && r !== false) toast(okMessage);
+      return r;
+    } catch (err) {
+      toast(errMsg(err), true);
+      return undefined;
+    }
+  }
+
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (_) {
+      const ta = h('textarea', { style: { position: 'fixed', opacity: '0' } });
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    }
+    toast('Copied to clipboard');
+  }
+
+  /* ---------------------------------------------------------------- values */
+
+  function readValue(key) {
+    if (key.startsWith('theme.')) return theme[key.slice(6)];
+    return getPath(settings, key);
+  }
+
+  const pending = new Map();
+  function writeValue(key, value) {
+    // Coalesce rapid slider/color events into one IPC call per frame.
+    const first = !pending.has(key);
+    pending.set(key, value);
+    if (!first) return;
+    requestAnimationFrame(() => {
+      const v = pending.get(key);
+      pending.delete(key);
+      const p = key.startsWith('theme.') ? api.setThemeValue(key.slice(6), v) : api.setSetting(key, v);
+      p.catch((err) => toast(errMsg(err), true));
+    });
+  }
+
+  function decimalsOf(step) {
+    const s = String(step);
+    return s.includes('.') ? s.split('.')[1].length : 0;
+  }
+
+  function formatRange(field, value) {
+    if (field.percent) return Math.round(value * 100) + '%';
+    const v = Number(value).toFixed(decimalsOf(field.step || 1));
+    return field.unit ? `${v} ${field.unit}`.replace(' °', '°').replace(' ×', '×') : v;
+  }
+
+  /* ---------------------------------------------------------------- shortcut capture */
+
+  const CODE_KEYS = {
+    Space: 'Space', Enter: 'Enter', Tab: 'Tab', ArrowUp: 'Up', ArrowDown: 'Down', ArrowLeft: 'Left', ArrowRight: 'Right',
+    Home: 'Home', End: 'End', PageUp: 'PageUp', PageDown: 'PageDown', Insert: 'Insert', Delete: 'Delete',
+    Minus: '-', Equal: '=', BracketLeft: '[', BracketRight: ']', Backslash: '\\', Semicolon: ';', Quote: "'",
+    Comma: ',', Period: '.', Slash: '/', Backquote: '`'
+  };
+
+  function keyFromEvent(e) {
+    const c = e.code;
+    if (/^Key[A-Z]$/.test(c)) return c.slice(3);
+    if (/^Digit[0-9]$/.test(c)) return c.slice(5);
+    if (/^Numpad[0-9]$/.test(c)) return 'num' + c.slice(6);
+    if (/^F([1-9]|1[0-9]|2[0-4])$/.test(c)) return c;
+    return CODE_KEYS[c] || null;
+  }
+
+  function acceleratorFromEvent(e) {
+    const mac = api.platform === 'darwin';
+    const mods = [];
+    if (mac ? e.metaKey : e.ctrlKey) mods.push('CommandOrControl');
+    if (mac && e.ctrlKey) mods.push('Control');
+    if (!mac && e.metaKey) mods.push('Super');
+    if (e.altKey) mods.push('Alt');
+    if (e.shiftKey) mods.push('Shift');
+    const key = keyFromEvent(e);
+    if (!key) return null;
+    const isFn = /^F\d+$/.test(key);
+    if (!mods.length && !isFn) return null;
+    return [...mods, key].join('+');
+  }
+
+  function prettyAccelerator(acc) {
+    if (!acc) return 'Disabled';
+    const mac = api.platform === 'darwin';
+    return acc
+      .replace(/CommandOrControl/g, mac ? '⌘' : 'Ctrl')
+      .replace(/Control/g, 'Ctrl')
+      .replace(/Alt/g, mac ? '⌥' : 'Alt')
+      .replace(/Super/g, 'Win')
+      .split('+')
+      .join(' + ');
+  }
+
+  /* ---------------------------------------------------------------- field controls */
+
+  function buildControl(field) {
+    const key = field.key;
+    let control;
+    let update;
+
+    switch (field.type) {
+      case 'toggle': {
+        const input = h('input', { type: 'checkbox', 'aria-label': field.label, onchange: () => writeValue(key, input.checked) });
+        control = h('label', { class: 'switch' }, input, h('span', { class: 'track' }));
+        update = (v) => { input.checked = Boolean(v); };
+        break;
+      }
+      case 'range': {
+        const out = h('span', { class: 'range-value' });
+        const input = h('input', { type: 'range', min: field.min, max: field.max, step: field.step || 1, 'aria-label': field.label });
+        input.addEventListener('input', () => {
+          const v = Number(input.value);
+          out.textContent = formatRange(field, v);
+          writeValue(key, v);
+        });
+        control = h('div', { class: 'field-control', style: { width: '100%' } }, input, out);
+        update = (v) => {
+          if (document.activeElement !== input) input.value = v;
+          out.textContent = formatRange(field, v);
+        };
+        break;
+      }
+      case 'select': {
+        const options = typeof field.options === 'function' ? field.options() : field.options;
+        const select = h('select', { class: 'input', 'aria-label': field.label, onchange: () => writeValue(key, select.value) },
+          options.map((o) => h('option', { value: o.value, text: o.label })));
+        control = select;
+        update = (v) => { select.value = v; };
+        break;
+      }
+      case 'color': {
+        const picker = h('input', { type: 'color', 'aria-label': field.label });
+        const hex = h('input', { class: 'input mono', type: 'text', maxlength: 7, spellcheck: 'false', 'aria-label': field.label + ' hex value' });
+        picker.addEventListener('input', () => {
+          hex.value = picker.value;
+          writeValue(key, picker.value);
+        });
+        hex.addEventListener('change', () => {
+          let v = hex.value.trim();
+          if (!v.startsWith('#')) v = '#' + v;
+          if (/^#[0-9a-fA-F]{3}$/.test(v)) v = '#' + v.slice(1).split('').map((c) => c + c).join('');
+          if (/^#[0-9a-fA-F]{6}$/.test(v)) writeValue(key, v.toLowerCase());
+          else {
+            toast('Use a hex color like #1ed760', true);
+            hex.value = readValue(key);
+          }
+        });
+        control = h('div', { class: 'color-wrap' }, picker, hex);
+        update = (v) => {
+          picker.value = v;
+          if (document.activeElement !== hex) hex.value = v;
+        };
+        break;
+      }
+      case 'number': {
+        const input = h('input', { class: 'input', type: 'number', min: field.min, max: field.max, step: field.step || 1, 'aria-label': field.label, style: { width: '120px' } });
+        input.addEventListener('change', () => {
+          const v = Math.round(Number(input.value));
+          if (!Number.isFinite(v) || v < field.min || v > field.max) {
+            toast(`Enter a number between ${field.min} and ${field.max}`, true);
+            input.value = readValue(key);
+            return;
+          }
+          writeValue(key, v);
+        });
+        control = input;
+        update = (v) => { if (document.activeElement !== input) input.value = v; };
+        break;
+      }
+      case 'shortcut': {
+        const input = h('input', { class: 'input shortcut-input', type: 'text', readonly: true, 'aria-label': field.label });
+        const badge = h('span', { class: 'badge' });
+        input.addEventListener('focus', () => {
+          input.classList.add('recording');
+          input.value = 'Press keys…';
+        });
+        input.addEventListener('blur', () => {
+          input.classList.remove('recording');
+          input.value = prettyAccelerator(readValue(key));
+        });
+        input.addEventListener('keydown', (e) => {
+          e.preventDefault();
+          if (e.key === 'Escape') { input.blur(); return; }
+          if ((e.key === 'Backspace' || e.key === 'Delete') && !e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey) {
+            writeValue(key, '');
+            input.blur();
+            return;
+          }
+          if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) return;
+          const acc = acceleratorFromEvent(e);
+          if (!acc) {
+            input.value = 'Use a modifier (Ctrl/Alt/Shift) + key';
+            return;
+          }
+          writeValue(key, acc);
+          input.blur();
+        });
+        control = h('div', { class: 'field-control', style: { width: '100%' } }, input, badge);
+        update = (v) => {
+          if (document.activeElement !== input) input.value = prettyAccelerator(v);
+          const name = key.split('.')[1];
+          const st = shortcutStatus[name];
+          badge.textContent = st === 'ok' ? 'Active' : st === 'in-use' ? 'Used by another app' : st === 'invalid' ? 'Invalid' : st === 'disabled' ? 'Off' : '';
+          badge.className = 'badge ' + (st === 'ok' ? 'ok' : st === 'in-use' || st === 'invalid' ? 'warn' : '');
+        };
+        break;
+      }
+      default: {
+        const input = h('input', { class: 'input', type: 'text', 'aria-label': field.label });
+        input.addEventListener('change', () => writeValue(key, input.value.trim()));
+        control = input;
+        update = (v) => { if (document.activeElement !== input) input.value = v; };
+      }
+    }
+    return { control, update };
+  }
+
+  function buildField(field) {
+    const { control, update } = buildControl(field);
+    const row = h('div', { class: 'field' },
+      h('div', null, h('div', { class: 'field-label', text: field.label }), field.help ? h('div', { class: 'field-help', text: field.help }) : null),
+      field.type === 'range' || field.type === 'shortcut' ? control : h('div', { class: 'field-control' }, control)
+    );
+    bindings.push({ field, row, update });
+    return row;
+  }
+
+  const ACTIONS = {
+    'reset-position': () => run(() => api.resetOverlayPosition(), 'Overlay moved')
+  };
+
+  function buildGroup(group) {
+    const node = h('section', { class: 'group' },
+      h('div', { class: 'group-title', text: group.title }),
+      h('div', { class: 'group-body' }, group.fields.map(buildField)),
+      group.actions ? h('div', { class: 'group-actions' }, group.actions.map((a) => h('button', { class: 'btn btn-small', type: 'button', text: a.label, onclick: ACTIONS[a.id] }))) : null
+    );
+    if (group.showIf) bindings.push({ group, row: node });
+    return node;
+  }
+
+  function syncBindings() {
+    for (const b of bindings) {
+      if (b.group) {
+        b.row.style.display = b.group.showIf(settings, theme) ? '' : 'none';
+        continue;
+      }
+      const visible = !b.field.showIf || b.field.showIf(settings, theme);
+      b.row.classList.toggle('hidden', !visible);
+      b.update(readValue(b.field.key));
+    }
+    customUpdaters.forEach((fn) => fn());
+  }
+
+  /* ---------------------------------------------------------------- custom sections */
+
+  function accountSection(body) {
+    const statusBox = h('section', { class: 'group' });
+    const clientInput = h('input', { class: 'input mono', type: 'text', placeholder: 'e.g. 1a2b3c4d5e6f…', spellcheck: 'false', 'aria-label': 'Spotify Client ID' });
+    clientInput.addEventListener('change', () => run(() => api.setSetting('account.clientId', clientInput.value.trim()), 'Client ID saved'));
+    const portInput = h('input', { class: 'input', type: 'number', min: 1024, max: 65535, style: { width: '120px' }, 'aria-label': 'Redirect port' });
+    portInput.addEventListener('change', () => {
+      const v = Math.round(Number(portInput.value));
+      if (!Number.isFinite(v) || v < 1024 || v > 65535) {
+        toast('Port must be between 1024 and 65535', true);
+        portInput.value = settings.account.redirectPort;
+        return;
+      }
+      run(() => api.setSetting('account.redirectPort', v), 'Port saved — update the Redirect URI in your Spotify app too');
+    });
+    const uriInput = h('input', { class: 'input mono', type: 'text', readonly: true, 'aria-label': 'Redirect URI' });
+
+    const guide = h('section', { class: 'group' },
+      h('div', { class: 'group-title', text: 'One-time setup (about 2 minutes)' }),
+      h('ol', { class: 'steps' },
+        h('li', null, 'Open the ', h('a', { href: '#', onclick: (e) => { e.preventDefault(); api.openExternal(DASHBOARD_URL); } }, 'Spotify Developer Dashboard'), ' and log in with your Spotify account.'),
+        h('li', null, 'Click ', h('b', { text: 'Create app' }), '. Use any name and description (for example “My Overlay”).'),
+        h('li', null, 'In ', h('b', { text: 'Redirect URIs' }), ' add exactly this address, then click Add:',
+          h('div', { class: 'copy-row' }, uriInput, h('button', { class: 'btn btn-small', type: 'button', text: 'Copy', onclick: () => copyText(uriInput.value) }))),
+        h('li', null, 'Under “Which API/SDKs are you planning to use?” tick ', h('b', { text: 'Web API' }), ', accept the terms and Save.'),
+        h('li', null, 'Open the app’s ', h('b', { text: 'Settings' }), ', copy the ', h('b', { text: 'Client ID' }), ' and paste it below. No Client Secret is needed.'),
+        h('li', null, 'Click ', h('b', { text: 'Connect Spotify' }), ' and approve access in your browser.')
+      )
+    );
+
+    const creds = h('section', { class: 'group' },
+      h('div', { class: 'group-title', text: 'Spotify app credentials' }),
+      h('div', { class: 'group-body' },
+        h('div', { class: 'field' }, h('div', null, h('div', { class: 'field-label', text: 'Client ID' }), h('div', { class: 'field-help', text: 'Stored on this computer only.' })), h('div', { class: 'field-control' }, clientInput)),
+        h('div', { class: 'field' }, h('div', null, h('div', { class: 'field-label', text: 'Redirect port' }), h('div', { class: 'field-help', text: 'Change only if 8888 is used by another program.' })), h('div', { class: 'field-control' }, portInput))
+      )
+    );
+
+    body.append(statusBox, guide, creds);
+
+    customUpdaters.push(() => {
+      if (document.activeElement !== clientInput) clientInput.value = settings.account.clientId;
+      if (document.activeElement !== portInput) portInput.value = settings.account.redirectPort;
+      uriInput.value = auth.redirectUri || `http://127.0.0.1:${settings.account.redirectPort}/callback`;
+
+      statusBox.replaceChildren();
+      const user = auth.user;
+      const avatar = user && user.image
+        ? h('img', { class: 'avatar', src: user.image, alt: '' })
+        : h('div', { class: 'avatar', text: user && user.name ? user.name.slice(0, 1).toUpperCase() : '?' });
+      const title = auth.connected ? `Connected${user && user.name ? ' as ' + user.name : ''}` : auth.loggingIn ? 'Waiting for you to approve in the browser…' : 'Not connected';
+      const sub = auth.connected
+        ? 'Your overlay updates live from Spotify.'
+        : settings.account.clientId ? 'Click Connect to sign in.' : 'Follow the steps below to get your Client ID.';
+      const btn = auth.connected
+        ? h('button', { class: 'btn btn-danger', type: 'button', text: 'Disconnect', onclick: () => run(() => api.logout(), 'Disconnected') })
+        : h('button', { class: 'btn btn-primary', type: 'button', text: auth.loggingIn ? 'Connecting…' : 'Connect Spotify', disabled: auth.loggingIn || !settings.account.clientId, onclick: () => run(() => api.login()) });
+      statusBox.append(h('div', { class: 'card-row' },
+        avatar,
+        h('div', { class: 'grow' }, h('div', { class: 'field-label', text: title }), h('div', { class: 'muted', text: sub }), auth.error ? h('div', { class: 'error-text', text: auth.error }) : null),
+        btn
+      ));
+    });
+  }
+
+  function previewBackground(v) {
+    switch (v.background) {
+      case 'gradient':
+      case 'glass':
+        return { background: `linear-gradient(${v.gradientAngle}deg, ${v.bg}, ${v.bg2})` };
+      case 'album':
+        return { background: `linear-gradient(135deg, ${v.accent}, ${v.bg} 70%)` };
+      case 'none':
+        return null;
+      default:
+        return { background: v.bg };
+    }
+  }
+
+  function themeCard(t, active) {
+    const v = t.values;
+    const bg = previewBackground(v);
+    const preview = h('div', { class: 'theme-preview' + (bg ? '' : ' checker'), style: Object.assign({ fontFamily: (FONTS[v.font] || FONTS.system).stack }, bg || {}) },
+      h('div', { class: 'p-art', style: { background: `linear-gradient(135deg, ${v.accent}, ${v.accent2})`, borderRadius: '8px' } }),
+      h('div', { class: 'p-lines' },
+        h('div', { class: 'p-title', style: { background: v.text } }),
+        h('div', { class: 'p-sub', style: { background: v.subtext } }),
+        h('div', { class: 'p-bar', style: { background: `linear-gradient(90deg, ${v.accent}, ${v.accent2})` } })
+      )
+    );
+    if (v.borderWidth > 0) preview.style.boxShadow = `inset 0 0 0 ${v.borderWidth}px ${v.borderColor}`;
+    const card = h('button', { class: 'theme-card' + (active ? ' active' : ''), type: 'button', 'aria-pressed': active ? 'true' : 'false', title: t.description || t.name, onclick: () => run(() => api.applyTheme(t.id)) },
+      preview,
+      h('div', { class: 'theme-meta' }, h('div', { class: 'theme-name', text: t.name }), h('div', { class: 'theme-desc', text: t.description || 'Custom theme' }))
+    );
+    if (t.custom) {
+      const del = h('span', { class: 'theme-delete', role: 'button', tabindex: '0', title: 'Delete theme', 'aria-label': `Delete ${t.name}`, text: '✕' });
+      const doDelete = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        run(() => api.deleteCustomTheme(t.id), 'Theme deleted');
+      };
+      del.addEventListener('click', doDelete);
+      del.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') doDelete(e); });
+      card.appendChild(del);
+    }
+    return card;
+  }
+
+  function themesSection(body, section) {
+    const nameInput = h('input', { class: 'input', type: 'text', placeholder: 'New theme name', maxlength: 60, 'aria-label': 'New theme name' });
+    const resetBtn = h('button', { class: 'btn btn-small', type: 'button', text: 'Undo my tweaks', onclick: () => run(() => api.resetThemeOverrides(), 'Theme reset to preset') });
+    const toolbar = h('div', { class: 'group-actions theme-toolbar' },
+      nameInput,
+      h('button', { class: 'btn btn-small btn-primary', type: 'button', text: 'Save as new theme', onclick: () => {
+        run(() => api.saveCustomTheme(nameInput.value.trim() || 'My theme'), 'Theme saved').then(() => { nameInput.value = ''; });
+      } }),
+      resetBtn,
+      h('button', { class: 'btn btn-small', type: 'button', text: 'Import…', onclick: () => run(() => api.importTheme(), 'Theme imported') }),
+      h('button', { class: 'btn btn-small', type: 'button', text: 'Export…', onclick: () => run(() => api.exportTheme(), 'Theme exported') })
+    );
+    const grid = h('div', { class: 'theme-grid' });
+    const currentLabel = h('div', { class: 'group-title' });
+    body.append(h('section', { class: 'group' }, currentLabel, grid, toolbar));
+    section.groups.forEach((g) => body.appendChild(buildGroup(g)));
+
+    let lastSig = '';
+    customUpdaters.push(() => {
+      const hasOverrides = Object.keys(settings.themeOverrides || {}).length > 0;
+      resetBtn.disabled = !hasOverrides;
+      const active = findTheme(settings.themeId, settings.customThemes);
+      currentLabel.textContent = `Current theme: ${active ? active.name : 'Unknown'}${hasOverrides ? ' (modified)' : ''}`;
+      const sig = JSON.stringify([settings.themeId, settings.customThemes]);
+      if (sig === lastSig) return;
+      lastSig = sig;
+      const custom = settings.customThemes.map((c) => findTheme(c.id, settings.customThemes));
+      grid.replaceChildren(...PRESETS.concat(custom).map((t) => themeCard(t, t.id === settings.themeId)));
+    });
+  }
+
+  function obsSection(body, section) {
+    section.groups.forEach((g) => body.appendChild(buildGroup(g)));
+    const url = h('input', { class: 'input mono', type: 'text', readonly: true, 'aria-label': 'Browser source URL' });
+    const status = h('div', { class: 'muted' });
+    body.appendChild(h('section', { class: 'group' },
+      h('div', { class: 'group-title', text: 'Add it to OBS' }),
+      h('div', { class: 'info-box' },
+        status,
+        h('div', { class: 'copy-row' }, url, h('button', { class: 'btn btn-small', type: 'button', text: 'Copy', onclick: () => copyText(url.value) })),
+        h('ol', { class: 'steps', style: { paddingLeft: '20px' } },
+          h('li', null, 'In OBS, click ', h('b', { text: '+' }), ' under Sources and choose ', h('b', { text: 'Browser' }), '.'),
+          h('li', null, 'Paste the URL above. Set width to about ', h('b', { text: '900' }), ' and height to ', h('b', { text: '400' }), '.'),
+          h('li', null, 'Leave the custom CSS empty. The background is already transparent.'),
+          h('li', null, 'Every change you make here appears in OBS instantly.')
+        ),
+        h('p', { class: 'muted', text: 'Tip: the “Stream Clean” theme is made for streaming. The browser source always uses the simulated visualizer, because a browser page cannot capture system audio.' })
+      )
+    ));
+    customUpdaters.push(() => {
+      url.value = `http://127.0.0.1:${settings.obs.port}/`;
+      status.textContent = obsStatus.error
+        ? `Could not start: ${obsStatus.error}`
+        : settings.obs.enabled ? (obsStatus.running ? 'Server running.' : 'Starting…') : 'Server is off. Enable it above.';
+      status.className = obsStatus.error ? 'error-text' : 'muted';
+    });
+  }
+
+  function advancedSection(body) {
+    let confirmTimer = null;
+    const resetBtn = h('button', { class: 'btn btn-danger', type: 'button', text: 'Reset all settings' });
+    resetBtn.addEventListener('click', () => {
+      if (!resetBtn.classList.contains('confirm')) {
+        resetBtn.classList.add('confirm');
+        resetBtn.textContent = 'Click again to confirm';
+        confirmTimer = setTimeout(() => {
+          resetBtn.classList.remove('confirm');
+          resetBtn.textContent = 'Reset all settings';
+        }, 4000);
+        return;
+      }
+      clearTimeout(confirmTimer);
+      resetBtn.classList.remove('confirm');
+      resetBtn.textContent = 'Reset all settings';
+      run(() => api.resetSettings(), 'Settings reset (your Spotify connection was kept)');
+    });
+    body.append(
+      h('section', { class: 'group' },
+        h('div', { class: 'group-title', text: 'Backup' }),
+        h('div', { class: 'info-box' }, h('p', { class: 'muted', text: 'Export your whole configuration (without your Client ID) to share it or move it to another computer.' })),
+        h('div', { class: 'group-actions' },
+          h('button', { class: 'btn', type: 'button', text: 'Export settings…', onclick: () => run(() => api.exportSettings(), 'Settings exported') }),
+          h('button', { class: 'btn', type: 'button', text: 'Import settings…', onclick: () => run(() => api.importSettings(), 'Settings imported') }),
+          h('button', { class: 'btn', type: 'button', text: 'Open settings folder', onclick: () => run(() => api.openConfigFolder()) })
+        )
+      ),
+      h('section', { class: 'group' },
+        h('div', { class: 'group-title', text: 'Danger zone' }),
+        h('div', { class: 'info-box' }, h('p', { class: 'muted', text: 'Restore every option to its default value. Your Spotify login, Client ID and overlay position are kept.' })),
+        h('div', { class: 'group-actions' }, resetBtn)
+      )
+    );
+  }
+
+  function aboutSection(body) {
+    const versions = h('p', { class: 'muted' });
+    body.append(
+      h('section', { class: 'group' },
+        h('div', { class: 'info-box' },
+          h('p', null, h('b', { text: 'Spotify Overlay' }), ' is a free, open-source, always-on-top “now playing” overlay with themes and audio visualizers.'),
+          versions,
+          h('p', { class: 'muted', text: 'This project is not affiliated with, endorsed by, or sponsored by Spotify. Spotify is a trademark of Spotify AB.' }),
+          h('p', { class: 'muted', text: 'Privacy: the app talks only to Spotify’s official API. Your tokens are encrypted on this computer. No analytics, no tracking.' })
+        ),
+        h('div', { class: 'group-actions links' },
+          h('button', { class: 'btn', type: 'button', text: 'GitHub repository', onclick: () => api.openExternal(REPO_URL) }),
+          h('button', { class: 'btn', type: 'button', text: 'Report a bug / request a feature', onclick: () => api.openExternal(REPO_URL + '/issues') }),
+          h('button', { class: 'btn', type: 'button', text: 'MIT License', onclick: () => api.openExternal(REPO_URL + '/blob/main/LICENSE') })
+        )
+      )
+    );
+    customUpdaters.push(() => {
+      versions.textContent = `Version ${appInfo.version || '?'} · Electron ${appInfo.electron || '?'} · ${appInfo.platform}`;
+    });
+  }
+
+  const CUSTOM = { account: accountSection, themes: themesSection, obs: obsSection, advanced: advancedSection, about: aboutSection };
+
+  /* ---------------------------------------------------------------- navigation */
+
+  function renderNav() {
+    const nav = document.getElementById('nav');
+    nav.replaceChildren(...SECTIONS.map((s) => h('button', {
+      class: 'nav-item' + (s.id === currentSection ? ' active' : ''),
+      type: 'button',
+      'aria-current': s.id === currentSection ? 'page' : null,
+      onclick: () => showSection(s.id)
+    }, svgIcon(s.icon), s.title)));
+  }
+
+  function showSection(id) {
+    const section = SECTIONS.find((s) => s.id === id) || SECTIONS[0];
+    currentSection = section.id;
+    try { localStorage.setItem('so.section', currentSection); } catch (_) { /* storage unavailable */ }
+    renderNav();
+    document.getElementById('section-title').textContent = section.title;
+    document.getElementById('section-desc').textContent = section.description || '';
+    const body = document.getElementById('section-body');
+    body.replaceChildren();
+    bindings = [];
+    customUpdaters = [];
+    if (section.custom) CUSTOM[section.custom](body, section);
+    else section.groups.forEach((g) => body.appendChild(buildGroup(g)));
+    syncBindings();
+    document.querySelector('.main').scrollTop = 0;
+  }
+
+  /* ---------------------------------------------------------------- global status */
+
+  function updateStatus() {
+    const dot = document.getElementById('status-dot');
+    const text = document.getElementById('status-text');
+    dot.className = 'dot' + (auth.connected ? ' ok' : auth.loggingIn ? ' busy' : '');
+    text.textContent = auth.connected ? `Connected${auth.user && auth.user.name ? ' · ' + auth.user.name : ''}` : auth.loggingIn ? 'Connecting…' : 'Not connected';
+    document.getElementById('toggle-overlay').textContent = overlayVisible ? 'Hide overlay' : 'Show overlay';
+  }
+
+  function onSettings(s) {
+    settings = s;
+    theme = getEffectiveTheme(s);
+    syncBindings();
+  }
+
+  document.getElementById('toggle-overlay').addEventListener('click', () => {
+    run(() => api.setOverlayVisible(!overlayVisible));
+  });
+
+  async function init() {
+    const [s, a, o, sc, info, vis] = await Promise.all([
+      api.getSettings(), api.getAuthStatus(), api.getObsStatus(), api.getShortcutStatus(), api.getAppInfo(), api.getOverlayVisible()
+    ]);
+    settings = s;
+    theme = getEffectiveTheme(s);
+    auth = a;
+    obsStatus = o;
+    shortcutStatus = sc || {};
+    appInfo = info;
+    overlayVisible = vis;
+    document.getElementById('version').textContent = `v${info.version}`;
+
+    let saved = null;
+    try { saved = localStorage.getItem('so.section'); } catch (_) { /* storage unavailable */ }
+    // First run: start on Account until connected.
+    showSection(!auth.connected ? 'account' : saved || 'themes');
+    updateStatus();
+
+    api.onSettings(onSettings);
+    api.onAuth((st) => {
+      const wasConnected = auth.connected;
+      auth = st;
+      updateStatus();
+      syncBindings();
+      if (!wasConnected && st.connected) toast('Spotify connected!');
+    });
+    api.onObsStatus((st) => { obsStatus = st; syncBindings(); });
+    api.onShortcutStatus((st) => { shortcutStatus = st || {}; syncBindings(); });
+    api.onOverlayVisible((v) => { overlayVisible = Boolean(v); updateStatus(); });
+  }
+
+  init().catch((err) => toast('Failed to load settings: ' + errMsg(err), true));
+})();

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spotify Overlay</title>
+  <link rel="stylesheet" href="overlay.css">
+</head>
+<body>
+  <div id="scaler">
+    <div id="card" class="card">
+      <div class="clip">
+        <div class="bg-album"></div>
+        <div class="bg-layer"></div>
+        <div class="viz-bg-slot"></div>
+      </div>
+      <div class="viz-top-slot"></div>
+      <div class="content">
+        <div class="art-wrap">
+          <div class="art">
+            <img class="art-img" alt="" draggable="false">
+            <div class="art-placeholder"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg></div>
+            <div class="vinyl-grooves"></div>
+          </div>
+        </div>
+        <div class="info">
+          <div class="line title"><span></span></div>
+          <div class="line artist"><span></span></div>
+          <div class="line album"><span></span></div>
+          <div class="line device"><span></span></div>
+          <div class="progress">
+            <span class="time cur">0:00</span>
+            <div class="bar"><div class="fill"><div class="knob"></div></div></div>
+            <span class="time dur">0:00</span>
+          </div>
+        </div>
+      </div>
+      <div class="viz-bottom-slot"><canvas class="viz"></canvas></div>
+      <div class="edit-hint">Drag to move · lock it from the tray or Ctrl+Shift+L</div>
+    </div>
+  </div>
+
+  <script src="../../shared/defaults.js"></script>
+  <script src="../../shared/themes.js"></script>
+  <script src="visualizer.js"></script>
+  <script src="overlay.js"></script>
+</body>
+</html>

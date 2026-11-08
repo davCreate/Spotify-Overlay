@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Setup help (README)
+    url: https://github.com/davCreate/Spotify-Overlay#-setup-2-minutes
+    about: Step-by-step guide to create your Spotify Client ID and connect.
+  - name: Security vulnerability
+    url: https://github.com/davCreate/Spotify-Overlay/security/advisories/new
+    about: Please report security issues privately.
