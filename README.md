@@ -65,11 +65,13 @@ Get the latest installer from the [**Releases page**](https://github.com/davCrea
 
 | OS | File |
 |---|---|
-| Windows | `Spotify Overlay Setup x.y.z.exe` (installer) or the portable `.exe` |
-| macOS | `.dmg` |
+| Windows | `Spotify.Overlay.Setup.x.y.z.exe` (installer) or `Spotify.Overlay.x.y.z.exe` (portable, no install) |
+| macOS | `.dmg` (Apple Silicon / M-series only for now. Intel Macs are not supported yet.) |
 | Linux | `.AppImage` or `.deb` |
 
 > The builds are not code-signed. On Windows, SmartScreen may say “Windows protected your PC”. Click **More info → Run anyway**. On macOS, right-click the app and choose **Open** the first time.
+
+Nothing else is needed to run the app. You don't need Node.js or any other software. After installing, follow the [Setup guide](#-setup-2-minutes) to connect your Spotify account.
 
 ### Option B: run from source
 Requirements: [Node.js](https://nodejs.org/) 18 or newer and Git.
@@ -241,7 +243,21 @@ Use **Settings → Layout → Move overlay back to the top-right corner**. The a
 <summary><b>Does it work with a free Spotify account?</b></summary>
 
 Yes. Reading what's playing works on both Free and Premium accounts.
+
+Your personal Spotify app runs in Spotify's *Development mode*. You are its owner, so you always have access and need no approval from Spotify. Spotify sometimes changes the rules for Development-mode apps. If you can't create an app or log in, check the current [Spotify developer terms](https://developer.spotify.com/terms) and open an [issue](https://github.com/davCreate/Spotify-Overlay/issues).
 </details>
+
+---
+
+## 🚧 Known limitations and coming soon
+
+This is the first release, and **more updates will be posted soon**. Current limitations:
+
+- The builds are not code-signed, so Windows and macOS show a warning on first launch (see [Installation](#-installation)).
+- The macOS build supports Apple Silicon only. Intel Macs are not supported yet.
+- The real-audio visualizer works on Windows only. macOS, Linux and OBS use the simulated visualizer.
+
+Watch or star the repository to get notified about new releases. Ideas and bug reports are welcome on the [Issues page](https://github.com/davCreate/Spotify-Overlay/issues).
 
 ---
 
