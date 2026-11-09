@@ -59,14 +59,16 @@
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "Spotify-Overlay-Setup-${version}.${ext}"
     },
     "mac": {
       "target": [
         "dmg"
       ],
       "icon": "assets/icon.png",
-      "category": "public.app-category.music"
+      "category": "public.app-category.music",
+      "artifactName": "Spotify-Overlay-${version}-${arch}.${ext}"
     },
     "linux": {
       "target": [
@@ -76,6 +78,26 @@
       "icon": "assets/icon.png",
       "category": "AudioVideo",
       "maintainer": "davCreate <https://github.com/davCreate>"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "davCreate",
+        "repo": "Spotify-Overlay",
+        "releaseType": "release"
+      }
+    ],
+    "portable": {
+      "artifactName": "Spotify-Overlay-${version}-portable.${ext}"
+    },
+    "appImage": {
+      "artifactName": "Spotify-Overlay-${version}.${ext}"
+    },
+    "deb": {
+      "artifactName": "spotify-overlay_${version}_${arch}.${ext}"
     }
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.11"
   }
 }

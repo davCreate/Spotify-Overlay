@@ -52,6 +52,8 @@ jobs:
             dist/*.dmg
             dist/*.AppImage
             dist/*.deb
+            dist/*.blockmap
+            dist/latest*.yml
           if-no-files-found: error
       - name: Attach to GitHub release
         if: github.event_name == 'release'
@@ -60,5 +62,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           shopt -s nullglob
-          files=(dist/*.exe dist/*.dmg dist/*.AppImage dist/*.deb)
+          # latest*.yml and *.blockmap are read by the in-app updater.
+          files=(dist/*.exe dist/*.dmg dist/*.AppImage dist/*.deb dist/*.blockmap dist/latest*.yml)
           gh release upload "${{ github.event.release.tag_name }}" "${files[@]}" --clobber

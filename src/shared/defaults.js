@@ -29,7 +29,8 @@
       pauseHideDelay: 5,
       autoHide: false,
       autoHideAfter: 8,
-      showDemoInSettings: true
+      showDemoInSettings: true,
+      checkForUpdates: true
     },
 
     layout: {

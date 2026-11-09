@@ -48,12 +48,13 @@ Free and open source. It works on Windows, macOS and Linux, and also as an OBS b
 - Global shortcuts you can rebind, a tray icon, launch at startup, and start hidden.
 - A demo track while Settings is open, so you can design your overlay without music.
 - Settings backup: export and import, plus reset.
+- **Built-in updates**: Settings → Updates checks GitHub for new versions. On the Windows installer and the Linux AppImage, one click downloads and installs the update, so you never have to reinstall.
 
 **Built for streamers**
 - A built-in **OBS / Streamlabs browser source** at `http://127.0.0.1:4777/` with a transparent background. Changes show up live.
 
 **Private by design**
-- You use **your own** free Spotify developer app (PKCE, no client secret). The app talks only to Spotify's official API.
+- You use **your own** free Spotify developer app (PKCE, no client secret). The app talks only to Spotify's official API, plus GitHub to check for updates (you can turn that off).
 - Tokens are encrypted with your OS keychain (Electron `safeStorage`). There's no analytics, no telemetry and no external server.
 
 ---
@@ -65,13 +66,19 @@ Get the latest installer from the [**Releases page**](https://github.com/davCrea
 
 | OS | File |
 |---|---|
-| Windows | `Spotify.Overlay.Setup.x.y.z.exe` (installer) or `Spotify.Overlay.x.y.z.exe` (portable, no install) |
+| Windows | `Spotify-Overlay-Setup-x.y.z.exe` (installer, recommended: updates itself) or `Spotify-Overlay-x.y.z-portable.exe` (portable, no install) |
 | macOS | `.dmg` (Apple Silicon / M-series only for now. Intel Macs are not supported yet.) |
-| Linux | `.AppImage` or `.deb` |
+| Linux | `.AppImage` (updates itself) or `.deb` |
 
 > The builds are not code-signed. On Windows, SmartScreen may say “Windows protected your PC”. Click **More info → Run anyway**. On macOS, right-click the app and choose **Open** the first time.
 
 Nothing else is needed to run the app. You don't need Node.js or any other software. After installing, follow the [Setup guide](#-setup-2-minutes) to connect your Spotify account.
+
+### Updating
+You only install the app once. Open **Settings → Updates** (or the tray menu → *Check for updates…*) and click **Check for updates**. The app also checks by itself shortly after launch and every 6 hours, and shows a notification when a new version is out. You can turn this off in the same section.
+
+- **Windows installer and Linux AppImage:** click **Download and install**, then **Restart and update**. Your settings and Spotify login are kept.
+- **macOS, Windows portable and `.deb`:** these builds cannot replace themselves. The app tells you when an update is out and opens the download page, then you install the new version over the old one.
 
 ### Option B: run from source
 Requirements: [Node.js](https://nodejs.org/) 18 or newer and Git.
@@ -118,6 +125,7 @@ Spotify only shares your playback data with an app you authorize. Each user crea
 | Open settings | Click the tray icon, or right-click it → *Settings…* |
 | Move the overlay | Unlock it (tray menu or `Ctrl+Shift+L`), drag it, then lock it again |
 | Show / hide | `Ctrl+Shift+O` or the tray menu |
+| Update the app | Tray menu → *Check for updates…*, or Settings → Updates |
 | Quit | Tray menu → *Quit* |
 
 When **locked**, the overlay is fully click-through: your mouse clicks go to the window underneath. On first launch it is unlocked, so you can place it where you want.
@@ -257,7 +265,7 @@ This is the first release, and **more updates will be posted soon**. Current lim
 - The macOS build supports Apple Silicon only. Intel Macs are not supported yet.
 - The real-audio visualizer works on Windows only. macOS, Linux and OBS use the simulated visualizer.
 
-Watch or star the repository to get notified about new releases. Ideas and bug reports are welcome on the [Issues page](https://github.com/davCreate/Spotify-Overlay/issues).
+New versions show up in the app itself (Settings → Updates). You can also watch or star the repository to get notified about new releases. Ideas and bug reports are welcome on the [Issues page](https://github.com/davCreate/Spotify-Overlay/issues).
 
 ---
 
@@ -271,7 +279,8 @@ src/
 │   ├── spotify-client.js polling, token refresh, rate-limit handling
 │   ├── store.js         validated, persisted settings
 │   ├── token-store.js   encrypted token storage
-│   └── obs-server.js    local browser-source server (SSE)
+│   ├── obs-server.js    local browser-source server (SSE)
+│   └── updater.js       update checks and in-app installs (GitHub releases)
 ├── preload/preload.js   safe bridge (contextIsolation + sandbox)
 ├── renderer/
 │   ├── overlay/         the overlay card + visualizer (also used by OBS)

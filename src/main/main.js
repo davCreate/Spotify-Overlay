@@ -20,13 +20,15 @@ const {
   nativeImage,
   dialog,
   desktopCapturer,
-  session
+  session,
+  Notification
 } = require('electron');
 
 const { SettingsStore } = require('./store');
 const { TokenStore } = require('./token-store');
 const { SpotifyClient } = require('./spotify-client');
 const { ObsServer } = require('./obs-server');
+const { Updater } = require('./updater');
 const { redirectUri } = require('./spotify-auth');
 const { getEffectiveTheme, sanitizeThemeValues } = require('../shared/themes');
 
@@ -58,6 +60,7 @@ if (!app.requestSingleInstanceLock()) {
 let store;
 let spotify;
 let obs;
+let updater;
 let overlayWin = null;
 let settingsWin = null;
 let tray = null;
@@ -65,6 +68,7 @@ let overlayVisible = true;
 let loggingIn = false;
 let shortcutStatus = {};
 let moveSaveTimer = null;
+let pendingSection = null;
 
 /* ------------------------------------------------------------------ helpers */
 
@@ -225,8 +229,13 @@ function setOverlayVisible(visible) {
 
 /* ------------------------------------------------------------------ settings window */
 
-function openSettings() {
+function openSettings(section) {
+  if (typeof section === 'string') pendingSection = section;
   if (settingsWin && !settingsWin.isDestroyed()) {
+    if (pendingSection) {
+      sendTo(settingsWin, 'navigate', pendingSection);
+      pendingSection = null;
+    }
     if (settingsWin.isMinimized()) settingsWin.restore();
     settingsWin.show();
     settingsWin.focus();
@@ -253,6 +262,10 @@ function openSettings() {
   hardenWindow(settingsWin);
   settingsWin.loadFile(path.join(RENDERER, 'settings', 'index.html'));
   settingsWin.once('ready-to-show', () => settingsWin.show());
+  settingsWin.webContents.once('did-finish-load', () => {
+    if (pendingSection) sendTo(settingsWin, 'navigate', pendingSection);
+    pendingSection = null;
+  });
   settingsWin.on('closed', () => {
     settingsWin = null;
     broadcast('preview', previewState());
@@ -271,18 +284,37 @@ function updateTrayMenu() {
     { type: 'separator' },
     { label: overlayVisible ? 'Hide overlay' : 'Show overlay', click: () => setOverlayVisible(!overlayVisible) },
     { label: s.layout.locked ? 'Unlock position (move overlay)' : 'Lock position (click-through)', click: () => store.set('layout.locked', !s.layout.locked) },
-    { label: 'Settings…', click: openSettings },
+    { label: 'Settings…', click: () => openSettings() },
+    { type: 'separator' },
+    updateMenuItem(),
     { type: 'separator' },
     { label: 'Quit', click: () => app.quit() }
   ]);
   tray.setContextMenu(menu);
 }
 
+function updateMenuItem() {
+  const st = updater ? updater.getState() : { status: 'idle' };
+  const openUpdates = () => openSettings('updates');
+  switch (st.status) {
+    case 'available':
+      return { label: `Update available (v${st.latestVersion})…`, click: openUpdates };
+    case 'downloading':
+      return { label: `Downloading update… ${st.percent}%`, enabled: false };
+    case 'downloaded':
+      return { label: `Restart to install v${st.latestVersion}`, click: () => updater.install() };
+    case 'checking':
+      return { label: 'Checking for updates…', enabled: false };
+    default:
+      return { label: 'Check for updates…', click: () => { openUpdates(); updater.check(); } };
+  }
+}
+
 function createTray() {
   const icon = appIcon('tray.png');
   tray = new Tray(icon.isEmpty() ? appIcon('icon.png').resize({ width: 16, height: 16 }) : icon);
   tray.setToolTip('Spotify Overlay');
-  tray.on('click', openSettings);
+  tray.on('click', () => openSettings());
   updateTrayMenu();
 }
 
@@ -446,6 +478,10 @@ function registerIpc() {
   });
   handle('obs:status', () => ({ running: obs.isRunning(), port: settings().obs.port, error: null }));
   handle('shortcuts:status', () => shortcutStatus);
+  handle('update:status', () => updater.getState());
+  handle('update:check', () => updater.check());
+  handle('update:download', () => updater.download());
+  handle('update:install', () => updater.install());
 
   // Fire-and-forget: overlay reports its content size so the window hugs the card.
   ipcMain.on('overlay:resize', (event, size) => {
@@ -472,6 +508,24 @@ async function init() {
   });
   obs = new ObsServer({
     getSnapshot: () => ({ settings: settings(), playback: spotify.lastState, auth: authStatus() })
+  });
+
+  updater = new Updater({ isAutoCheckEnabled: () => settings().general.checkForUpdates });
+  let lastNotified = null;
+  updater.on('status', (st) => {
+    sendTo(settingsWin, 'update-status', st);
+    updateTrayMenu();
+    // Tell the user once per new version, even if the settings window is closed.
+    if (st.status === 'available' && st.latestVersion !== lastNotified && Notification.isSupported()) {
+      lastNotified = st.latestVersion;
+      const n = new Notification({
+        title: 'Spotify Overlay update available',
+        body: `Version ${st.latestVersion} is ready. Click to update.`,
+        icon: appIcon('icon.png')
+      });
+      n.on('click', () => openSettings('updates'));
+      n.show();
+    }
   });
 
   spotify.on('playback', (state) => broadcast('playback', state));
@@ -502,6 +556,7 @@ async function init() {
   applyLoginItem();
   applyObs();
   spotify.start();
+  if (!SMOKE_DIR) updater.start();
 
   const s = settings();
   if (!s.account.clientId || !spotify.isConnected() || process.argv.includes('--settings') || SMOKE_DIR) openSettings();
@@ -548,4 +603,5 @@ app.on('before-quit', () => {
   globalShortcut.unregisterAll();
   if (spotify) spotify.stop();
   if (obs) obs.stop();
+  if (updater) updater.stop();
 });

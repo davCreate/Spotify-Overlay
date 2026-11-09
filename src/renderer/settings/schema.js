@@ -261,6 +261,21 @@
       custom: 'advanced'
     },
     {
+      id: 'updates',
+      title: 'Updates',
+      icon: 'M12 4V1L8 5l4 4V6a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z',
+      description: 'Get new versions without downloading and reinstalling the app yourself.',
+      custom: 'updates',
+      groups: [
+        {
+          title: 'Automatic checks',
+          fields: [
+            { key: 'general.checkForUpdates', label: 'Check for updates automatically', type: 'toggle', help: 'Checks GitHub shortly after launch and every 6 hours. Nothing is downloaded until you click Update.' }
+          ]
+        }
+      ]
+    },
+    {
       id: 'about',
       title: 'About',
       icon: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z',

@@ -14,6 +14,7 @@ All notable changes to this project are documented here. The format is based on 
 - Tray icon, rebindable global shortcuts, launch at startup and start hidden.
 - OBS / Streamlabs browser source served on `127.0.0.1`.
 - Settings export/import and reset.
+- Built-in update checker (Settings → Updates and the tray menu). The Windows installer and Linux AppImage download and install updates in-app; other builds link to the download page. Automatic checks on launch and every 6 hours, with a notification when a new version is out.
 - Unit tests, a smoke-test mode and a CI workflow that builds installers for Windows, macOS and Linux.
 
 [1.0.0]: https://github.com/davCreate/Spotify-Overlay/releases/tag/v1.0.0

@@ -52,6 +52,13 @@ contextBridge.exposeInMainWorld('overlayAPI', {
   openExternal: invoke('app:open-external'),
   getAppInfo: invoke('app:info'),
 
+  getUpdateStatus: invoke('update:status'),
+  checkForUpdates: invoke('update:check'),
+  downloadUpdate: invoke('update:download'),
+  installUpdate: invoke('update:install'),
+  onUpdateStatus: on('update-status'),
+  onNavigate: on('navigate'),
+
   onSettings: on('settings'),
   onPlayback: on('playback'),
   onAuth: on('auth'),

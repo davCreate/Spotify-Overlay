@@ -20,6 +20,7 @@
   let shortcutStatus = {};
   let appInfo = { version: '', platform: api.platform };
   let overlayVisible = true;
+  let updateState = { status: 'idle', mode: 'manual', currentVersion: '', latestVersion: null, percent: 0, error: null, lastChecked: null };
   let currentSection = 'account';
   let bindings = [];
   let customUpdaters = [];
@@ -547,7 +548,7 @@
           h('p', null, h('b', { text: 'Spotify Overlay' }), ' is a free, open-source, always-on-top “now playing” overlay with themes and audio visualizers.'),
           versions,
           h('p', { class: 'muted', text: 'This project is not affiliated with, endorsed by, or sponsored by Spotify. Spotify is a trademark of Spotify AB.' }),
-          h('p', { class: 'muted', text: 'Privacy: the app talks only to Spotify’s official API. Your tokens are encrypted on this computer. No analytics, no tracking.' })
+          h('p', { class: 'muted', text: 'Privacy: the app talks only to Spotify’s official API, and to GitHub to check for updates. Your tokens are encrypted on this computer. No analytics, no tracking.' })
         ),
         h('div', { class: 'group-actions links' },
           h('button', { class: 'btn', type: 'button', text: 'GitHub repository', onclick: () => api.openExternal(REPO_URL) }),
@@ -561,7 +562,76 @@
     });
   }
 
-  const CUSTOM = { account: accountSection, themes: themesSection, obs: obsSection, advanced: advancedSection, about: aboutSection };
+  function updatesSection(body, section) {
+    const versionLine = h('p', null);
+    const statusLine = h('p', { class: 'muted' });
+    const progress = h('div', { class: 'update-progress', hidden: true }, h('div', { class: 'update-progress-fill' }));
+    const actions = h('div', { class: 'group-actions' });
+    const note = h('p', { class: 'muted' });
+
+    body.appendChild(h('section', { class: 'group' },
+      h('div', { class: 'group-title', text: 'App version' }),
+      h('div', { class: 'info-box' }, versionLine, statusLine, progress, note),
+      actions
+    ));
+    section.groups.forEach((g) => body.appendChild(buildGroup(g)));
+
+    const btn = (text, onclick, primary) => h('button', { class: 'btn' + (primary ? ' btn-primary' : ''), type: 'button', text, onclick });
+    const check = () => run(() => api.checkForUpdates());
+
+    customUpdaters.push(() => {
+      const u = updateState;
+      const auto = u.mode === 'auto';
+      versionLine.replaceChildren('Installed version: ', h('b', { text: `v${u.currentVersion || appInfo.version}` }));
+      statusLine.className = u.status === 'error' ? 'error-text' : 'muted';
+      progress.hidden = u.status !== 'downloading';
+      progress.firstChild.style.width = `${u.percent || 0}%`;
+
+      const when = u.lastChecked ? ` Last checked ${new Date(u.lastChecked).toLocaleTimeString()}.` : '';
+      const buttons = [];
+      switch (u.status) {
+        case 'checking':
+          statusLine.textContent = 'Checking for updates…';
+          buttons.push(h('button', { class: 'btn', type: 'button', text: 'Checking…', disabled: true }));
+          break;
+        case 'available':
+          statusLine.textContent = `Version ${u.latestVersion} is available.`;
+          buttons.push(auto
+            ? btn('Download and install', () => run(() => api.downloadUpdate()), true)
+            : btn('Open download page', () => api.openExternal(u.releaseUrl), true));
+          buttons.push(btn('Release notes', () => api.openExternal(u.releaseUrl)));
+          break;
+        case 'downloading':
+          statusLine.textContent = `Downloading version ${u.latestVersion}… ${u.percent || 0}%`;
+          break;
+        case 'downloaded':
+          statusLine.textContent = `Version ${u.latestVersion} is ready. Restart the app to finish updating. Your settings and Spotify login are kept.`;
+          buttons.push(btn('Restart and update', () => run(() => api.installUpdate()), true));
+          break;
+        case 'not-available':
+          statusLine.textContent = 'You have the latest version.' + when;
+          buttons.push(btn('Check for updates', check, true));
+          break;
+        case 'error':
+          statusLine.textContent = u.error || 'Could not check for updates.';
+          buttons.push(btn('Try again', check, true));
+          break;
+        default:
+          statusLine.textContent = 'Click the button to see if a newer version is out.' + when;
+          buttons.push(btn('Check for updates', check, true));
+      }
+      buttons.push(btn('All releases', () => api.openExternal(REPO_URL + '/releases')));
+      actions.replaceChildren(...buttons);
+
+      note.textContent = auto
+        ? 'Updates download in the background and install with one click. You never need to run the installer again.'
+        : appInfo.packaged
+          ? 'This version of the app (macOS, Windows portable or .deb) cannot install updates by itself. When an update is out, download it from the release page and install it over the current one.'
+          : 'You are running from source. Update with "git pull" and "npm install".';
+    });
+  }
+
+  const CUSTOM = { account: accountSection, themes: themesSection, obs: obsSection, advanced: advancedSection, updates: updatesSection, about: aboutSection };
 
   /* ---------------------------------------------------------------- navigation */
 
@@ -612,10 +682,21 @@
     run(() => api.setOverlayVisible(!overlayVisible));
   });
 
+  // The main process can ask to open a section (e.g. tray → "Check for updates…").
+  // It may arrive before init() finishes, so remember it until then.
+  let ready = false;
+  let navTarget = null;
+  api.onNavigate((id) => {
+    if (!SECTIONS.some((s) => s.id === id)) return;
+    if (ready) showSection(id);
+    else navTarget = id;
+  });
+
   async function init() {
-    const [s, a, o, sc, info, vis] = await Promise.all([
-      api.getSettings(), api.getAuthStatus(), api.getObsStatus(), api.getShortcutStatus(), api.getAppInfo(), api.getOverlayVisible()
+    const [s, a, o, sc, info, vis, up] = await Promise.all([
+      api.getSettings(), api.getAuthStatus(), api.getObsStatus(), api.getShortcutStatus(), api.getAppInfo(), api.getOverlayVisible(), api.getUpdateStatus()
     ]);
+    updateState = up;
     settings = s;
     theme = getEffectiveTheme(s);
     auth = a;
@@ -628,7 +709,8 @@
     let saved = null;
     try { saved = localStorage.getItem('so.section'); } catch (_) { /* storage unavailable */ }
     // First run: start on Account until connected.
-    showSection(!auth.connected ? 'account' : saved || 'themes');
+    showSection(navTarget || (!auth.connected ? 'account' : saved || 'themes'));
+    ready = true;
     updateStatus();
 
     api.onSettings(onSettings);
@@ -642,6 +724,7 @@
     api.onObsStatus((st) => { obsStatus = st; syncBindings(); });
     api.onShortcutStatus((st) => { shortcutStatus = st || {}; syncBindings(); });
     api.onOverlayVisible((v) => { overlayVisible = Boolean(v); updateStatus(); });
+    api.onUpdateStatus((st) => { updateState = st; syncBindings(); });
   }
 
   init().catch((err) => toast('Failed to load settings: ' + errMsg(err), true));
