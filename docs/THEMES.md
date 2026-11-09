@@ -1,10 +1,10 @@
 # Themes
 
-A theme controls the colors, background, border, shadow and font of the overlay. Layout, sizes and the visualizer are separate settings, so one theme works with every layout.
+A theme controls the colors, background, border, shadow, font and visual effect of the overlay. Layout, sizes and the visualizer are separate settings, so one theme works with every layout.
 
 ## Using themes
 
-- **Settings → Themes**: click a card to apply it.
+- **Settings → Themes**: themes are grouped into categories (Normal, Minimal, 3D, Glass, Neon & Glow, Animated, Retro, Colorful & Nature, Streaming). Click a category chip to filter, and click a card to apply it.
 - Change any value in the editor below the gallery. Your changes are applied live and marked as *(modified)*.
 - **Save as new theme** stores your version as a custom theme.
 - **Undo my tweaks** returns to the original preset.
@@ -32,7 +32,8 @@ A theme controls the colors, background, border, shadow and font of the overlay.
     "borderColor": "#ffffff",
     "shadow": 24,
     "glow": 22,
-    "font": "condensed"
+    "font": "condensed",
+    "effect": "neon"
   }
 }
 ```
@@ -57,17 +58,18 @@ Every key in `values` is optional. Missing keys take the default value, and inva
 | `shadow` | number | 0–80 | Drop-shadow blur (px) |
 | `glow` | number | 0–60 | Accent glow around the card (px) |
 | `font` | string | `system`, `rounded`, `condensed`, `serif`, `mono`, `display` | Font family (system fonts only, so it works offline) |
+| `effect` | string | `none`, `tilt`, `extrude`, `layered`, `neumorph`, `neon`, `holo`, `aurora`, `shimmer`, `scanlines`, `pixel`, `sticker` | Visual effect (3D, glow, animated or retro) |
 
 ## Contributing a built-in theme
 
 1. Add an entry to `PRESETS` in [`src/shared/themes.js`](../src/shared/themes.js):
    ```js
-   preset('my-theme', 'My Theme', 'One short sentence describing it.', {
-     background: 'gradient', bg: '#101010', bg2: '#303030', accent: '#ff8800', accent2: '#ffcc00'
+   preset('my-theme', 'My Theme', 'neon', 'One short sentence describing it.', {
+     background: 'gradient', bg: '#101010', bg2: '#303030', accent: '#ff8800', accent2: '#ffcc00', effect: 'neon'
    }),
    ```
-   Values you leave out come from the base theme (Emerald Night).
-2. Run `npm test`. It checks that every preset value is valid and that ids are unique.
+   The third argument is the gallery category: one of the ids in `CATEGORIES` (`classic`, `minimal`, `3d`, `glass`, `neon`, `animated`, `retro`, `colorful`, `stream`). Values you leave out come from the base theme (Emerald Night).
+2. Run `npm test`. It checks that every preset value is valid, that ids are unique and that every category exists.
 3. Open a pull request with a screenshot of the theme. `npx electron . --smoke-test=./smoke` creates one for you.
 
 Please check that the text stays readable: aim for a contrast ratio of at least 4.5:1 between `text` and `bg`.

@@ -6,7 +6,7 @@
 (function () {
   'use strict';
 
-  const { getEffectiveTheme, FONTS } = window.SO_THEMES;
+  const { getEffectiveTheme, FONTS, EFFECTS } = window.SO_THEMES;
   const { DEFAULT_SETTINGS, clone } = window.SO_DEFAULTS;
 
   /* ---------------------------------------------------------------- API (Electron or web) */
@@ -299,6 +299,7 @@
     setClass(card, 'align-', s.layout.style === 'vertical' ? 'center' : s.text.align, ['left', 'center', 'right']);
     setClass(card, 'bg-', theme.background, ['solid', 'gradient', 'glass', 'album', 'none']);
     setClass(card, 'idle-', s.animation.idle, ['none', 'float', 'breathe']);
+    setClass(card, 'fx-', EFFECTS[theme.effect] ? theme.effect : 'none', Object.keys(EFFECTS));
     card.classList.toggle('uppercase', s.text.uppercase);
     card.classList.toggle('text-shadow', s.text.textShadow || theme.background === 'none');
     el.art.classList.toggle('has-shadow', s.art.shadow);
@@ -334,8 +335,10 @@
     document.body.classList.toggle('unlocked', isUnlocked());
     const lockKey = prettyAccelerator(s.shortcuts.toggleLock);
     el.hint.textContent = 'Drag to move · lock it from the tray' + (lockKey ? ` or ${lockKey}` : '');
+    setVar('--hint-scale', 1 / s.layout.scale);
 
-    margin = clamp(Math.ceil(Math.max(theme.shadow + 12, theme.glow * 1.6, 16)), 16, 120);
+    const fxMargin = (EFFECTS[theme.effect] || EFFECTS.none).margin;
+    margin = clamp(Math.ceil(Math.max(theme.shadow + 12, theme.glow * 1.6, 16) + fxMargin), 16, 150);
     if (isUnlocked()) margin = Math.max(margin, 34);
     setVar('--margin', margin + 'px');
 

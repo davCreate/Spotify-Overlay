@@ -25,6 +25,12 @@
       custom: 'themes',
       groups: [
         {
+          title: 'Effect',
+          fields: [
+            { key: 'theme.effect', label: 'Visual effect', type: 'select', options: () => Object.entries(window.SO_THEMES.EFFECTS).map(([value, e]) => ({ value, label: e.label })), help: '3D, neon, holographic, animated and retro effects. Works with any colors below.' }
+          ]
+        },
+        {
           title: 'Background',
           fields: [
             { key: 'theme.background', label: 'Background style', type: 'select', options: opt(['solid', 'Solid color'], ['gradient', 'Gradient'], ['glass', 'Glass'], ['album', 'Blurred album art'], ['none', 'None (transparent)']) },
@@ -94,11 +100,24 @@
       icon: 'M3 3h8v8H3V3zm10 0h8v5h-8V3zM3 13h8v8H3v-8zm10-3h8v11h-8V10z',
       groups: [
         {
+          title: 'Size',
+          fields: [
+            { key: 'layout.scale', label: 'Overall size', type: 'range', min: 0.5, max: 3, step: 0.05, percent: true, help: 'Makes the whole overlay bigger or smaller and keeps its proportions. Also in the tray menu (Size) and with the size shortcuts in Settings → Shortcuts.' }
+          ],
+          actions: [
+            { id: 'size-down', label: '− Smaller' },
+            { id: 'size-up', label: '+ Bigger' },
+            { id: 'size-75', label: 'Small (75%)' },
+            { id: 'size-100', label: 'Normal (100%)' },
+            { id: 'size-150', label: 'Large (150%)' },
+            { id: 'size-200', label: 'Extra large (200%)' }
+          ]
+        },
+        {
           title: 'Card',
           fields: [
             { key: 'layout.style', label: 'Layout', type: 'select', options: opt(['horizontal', 'Horizontal (art left)'], ['vertical', 'Vertical (art on top)'], ['compact', 'Compact'], ['minimal', 'Minimal (text only)']) },
             { key: 'layout.width', label: 'Width', type: 'range', min: 220, max: 900, step: 5, unit: 'px' },
-            { key: 'layout.scale', label: 'Scale', type: 'range', min: 0.5, max: 3, step: 0.05, unit: '×' },
             { key: 'layout.padding', label: 'Inner padding', type: 'range', min: 0, max: 48, step: 1, unit: 'px' },
             { key: 'layout.gap', label: 'Spacing between art and text', type: 'range', min: 0, max: 48, step: 1, unit: 'px' },
             { key: 'layout.radius', label: 'Corner radius', type: 'range', min: 0, max: 64, step: 1, unit: 'px' },
@@ -233,7 +252,9 @@
           title: 'Global shortcuts',
           fields: [
             { key: 'shortcuts.toggleOverlay', label: 'Show / hide overlay', type: 'shortcut' },
-            { key: 'shortcuts.toggleLock', label: 'Lock / unlock position', type: 'shortcut' }
+            { key: 'shortcuts.toggleLock', label: 'Lock / unlock position', type: 'shortcut' },
+            { key: 'shortcuts.sizeUp', label: 'Make overlay bigger', type: 'shortcut' },
+            { key: 'shortcuts.sizeDown', label: 'Make overlay smaller', type: 'shortcut' }
           ]
         }
       ]

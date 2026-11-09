@@ -4,7 +4,7 @@
 
 # Spotify Overlay
 
-**A highly customizable, always-on-top “now playing” overlay for Spotify, with album art, live progress, audio visualizers and 18 built-in themes.**
+**A highly customizable, always-on-top “now playing” overlay for Spotify, with album art, live progress, audio visualizers and 42 built-in themes.**
 
 Free and open source. It works on Windows, macOS and Linux, and also as an OBS browser source for streamers.
 
@@ -35,13 +35,16 @@ Free and open source. It works on Windows, macOS and Linux, and also as an OBS b
 - A **simulated** mode for macOS, Linux and OBS. It only animates while music is playing.
 - Placement below or above the song info, or behind everything. Colors can follow the accent, a gradient, a rainbow or the text color. Glow, sensitivity, smoothing, band count, height, opacity and FPS limit are all adjustable.
 
-**18 themes + a full theme editor**
+**42 themes in 9 categories + a full theme editor**
+- Categories: Normal, Minimal, **3D**, Glass, Neon & Glow, **Animated**, Retro, Colorful & Nature and Streaming. Each theme card shows its background, effect and font.
+- **12 visual effects**: 3D tilt, 3D extruded block, 3D stacked cards, soft 3D (neumorphism), neon tube, holographic foil, aurora, shimmer, CRT scanlines, pixel/8-bit and sticker. Any effect can be combined with any colors.
 - Background styles: solid, gradient, glass, **blurred album art**, or fully transparent.
 - **Album-adaptive colors**: accent colors are extracted from each cover.
-- Edit every color, border, shadow, glow and font. Save your own themes, and export or import them as JSON to share.
+- Edit every color, border, shadow, glow, font and effect. Save your own themes, and export or import them as JSON to share.
 
 **Extensive settings** (75+ options in 13 sections)
-- Layouts: horizontal, vertical, compact and minimal (text only). Width, scale (0.5×–3×), padding, spacing, corner radius and opacity.
+- **Overall size** from 50% to 300%. Everything grows or shrinks together and keeps its proportions. Use the slider and the Small/Normal/Large/Extra large buttons in Settings → Layout, the tray menu, or the shortcuts.
+- Layouts: horizontal, vertical, compact and minimal (text only). Width, padding, spacing, corner radius and opacity.
 - Song-change transitions (fade, slide, zoom, flip, blur) with an adjustable duration, plus idle animations (float, breathe).
 - Smart visibility: hide when idle, hide after being paused for N seconds, or **auto-hide** (the overlay pops in on song change, then fades out, which is perfect for gaming).
 - **Click-through lock**: the overlay never blocks the game or app under it. Unlock it to drag it anywhere.
@@ -125,6 +128,7 @@ Spotify only shares your playback data with an app you authorize. Each user crea
 | Open settings | Click the tray icon, or right-click it → *Settings…* |
 | Move the overlay | Unlock it (tray menu or `Ctrl+Shift+L`), drag it, then lock it again |
 | Show / hide | `Ctrl+Shift+O` or the tray menu |
+| Make it bigger / smaller | `Ctrl+Alt+Up` / `Ctrl+Alt+Down`, tray menu → *Size*, or Settings → Layout → Size |
 | Update the app | Tray menu → *Check for updates…*, or Settings → Updates |
 | Quit | Tray menu → *Quit* |
 
@@ -136,14 +140,19 @@ When **locked**, the overlay is fully click-through: your mouse clicks go to the
 
 ## 🎨 Themes
 
-| | | |
-|---|---|---|
-| **Emerald Night**: charcoal with a green accent | **Midnight Glass**: translucent frosted card | **Synthwave**: 80s magenta/violet neon |
-| **Cyberpunk**: yellow and cyan on black | **Minimal Light**: clean white | **Minimal Dark**: quiet near-black |
-| **Vaporwave**: pastel pink and teal | **Ocean Depths**: deep blues | **Sunset Boulevard**: orange-to-rose |
-| **Forest Canopy**: earthy greens | **Retro Terminal**: phosphor-green monospace | **Monochrome**: bold black and white |
-| **Nocturne**: purples with pink | **Arctic Frost**: polar greys and icy blues | **Album Adaptive**: blurred cover with extracted colors |
-| **Stream Clean**: no background, made for OBS | **Gold Luxe**: black velvet and gold | **Sakura**: cherry-blossom pinks |
+Settings → Themes groups the 42 themes into categories. Click a category chip to show only that category.
+
+| Category | Themes |
+|---|---|
+| **Normal** | Emerald Night, Nocturne, Arctic Frost, Gold Luxe, Album Adaptive, Espresso |
+| **Minimal** | Minimal Light, Minimal Dark, Monochrome |
+| **3D** | Tilted Stage (3D tilt), Solid Block and Isometric (extruded), Card Deck (stacked cards), Soft Clay and Soft Night (neumorphism) |
+| **Glass** | Midnight Glass, Frosted Ice, Smoked Glass, Rose Glass |
+| **Neon & Glow** | Synthwave, Cyberpunk, Neon Tokyo, Toxic, Electric Blue |
+| **Animated** | Aurora, Holographic, Lava Lamp, Liquid Gold |
+| **Retro** | Retro Terminal, Amber CRT, Arcade 8-bit, Vaporwave, Bubblegum Sticker |
+| **Colorful & Nature** | Ocean Depths, Sunset Boulevard, Forest Canopy, Sakura, Desert Dunes, Galaxy |
+| **Streaming** | Stream Clean, Stream Lower Third, Chroma Key |
 
 <img src="docs/images/settings-themes.png" alt="Theme gallery in Settings" width="720">
 
@@ -182,9 +191,9 @@ The server listens on `127.0.0.1` only, so other devices on your network cannot 
 | Section | Options |
 |---|---|
 | **Account** | Client ID, redirect port, connect/disconnect |
-| **Themes** | 18 presets, custom themes, import/export; background style, colors ×6, album-adaptive colors, gradient angle, background opacity, album blur, border width/color, shadow, glow, font |
+| **Themes** | 42 presets in 9 categories, custom themes, import/export; visual effect, background style, colors ×6, album-adaptive colors, gradient angle, background opacity, album blur, border width/color, shadow, glow, font |
 | **General** | Launch at startup, start hidden, refresh interval (0.5–10 s), hide when idle, hide when paused (+ delay), auto-hide (+ duration), demo track while Settings is open |
-| **Layout** | Horizontal / vertical / compact / minimal, width, scale, padding, spacing, corner radius, opacity, lock position, reset position |
+| **Layout** | Overall size (50–300%, proportional) with quick size buttons, horizontal / vertical / compact / minimal, width, padding, spacing, corner radius, opacity, lock position, reset position |
 | **Album art** | Show, size, shape (square/rounded/circle/vinyl), spin, beat pulse, shadow |
 | **Text** | Show title/artist/album/device, alignment, sizes, title weight, uppercase, text shadow, scrolling titles |
 | **Progress bar** | Show, time labels, thickness, rounded ends, knob |

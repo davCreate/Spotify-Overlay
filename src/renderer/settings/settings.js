@@ -7,7 +7,7 @@
 
   const api = window.overlayAPI;
   const { SECTIONS } = window.SO_SCHEMA;
-  const { PRESETS, FONTS, getEffectiveTheme, findTheme } = window.SO_THEMES;
+  const { PRESETS, FONTS, EFFECTS, CATEGORIES, getEffectiveTheme, findTheme } = window.SO_THEMES;
   const { getPath } = window.SO_DEFAULTS;
 
   const REPO_URL = 'https://github.com/davCreate/Spotify-Overlay';
@@ -309,8 +309,18 @@
     return row;
   }
 
+  const setScale = (v) => {
+    const next = Math.round(Math.min(3, Math.max(0.5, v)) * 100) / 100;
+    return run(() => api.setSetting('layout.scale', next), `Size: ${Math.round(next * 100)}%`);
+  };
   const ACTIONS = {
-    'reset-position': () => run(() => api.resetOverlayPosition(), 'Overlay moved')
+    'reset-position': () => run(() => api.resetOverlayPosition(), 'Overlay moved'),
+    'size-down': () => setScale(settings.layout.scale - 0.1),
+    'size-up': () => setScale(settings.layout.scale + 0.1),
+    'size-75': () => setScale(0.75),
+    'size-100': () => setScale(1),
+    'size-150': () => setScale(1.5),
+    'size-200': () => setScale(2)
   };
 
   function buildGroup(group) {
@@ -428,9 +438,22 @@
       )
     );
     if (v.borderWidth > 0) preview.style.boxShadow = `inset 0 0 0 ${v.borderWidth}px ${v.borderColor}`;
+    const effect = EFFECTS[v.effect] && v.effect !== 'none' ? v.effect : null;
+    const frame = h('div', { class: 'theme-frame' + (effect ? ` pfx-${effect}` : '') }, preview);
+    frame.style.setProperty('--p-accent', v.accent);
+    frame.style.setProperty('--p-accent2', v.accent2);
+    frame.style.setProperty('--p-bg', v.bg);
+    const tags = [BG_LABELS[v.background] || v.background, effect ? EFFECTS[effect].label : null, (FONTS[v.font] || FONTS.system).label]
+      .filter(Boolean)
+      .map((tag, i) => h('span', { class: 'theme-tag' + (i === 1 && effect ? ' fx' : ''), text: tag }));
+    if (v.useAlbumColors) tags.push(h('span', { class: 'theme-tag', text: 'Album colors' }));
     const card = h('button', { class: 'theme-card' + (active ? ' active' : ''), type: 'button', 'aria-pressed': active ? 'true' : 'false', title: t.description || t.name, onclick: () => run(() => api.applyTheme(t.id)) },
-      preview,
-      h('div', { class: 'theme-meta' }, h('div', { class: 'theme-name', text: t.name }), h('div', { class: 'theme-desc', text: t.description || 'Custom theme' }))
+      frame,
+      h('div', { class: 'theme-meta' },
+        h('div', { class: 'theme-name', text: t.name }),
+        h('div', { class: 'theme-desc', text: t.description || 'Custom theme' }),
+        h('div', { class: 'theme-tags' }, tags)
+      )
     );
     if (t.custom) {
       const del = h('span', { class: 'theme-delete', role: 'button', tabindex: '0', title: 'Delete theme', 'aria-label': `Delete ${t.name}`, text: '✕' });
@@ -446,6 +469,9 @@
     return card;
   }
 
+  const BG_LABELS = { solid: 'Solid', gradient: 'Gradient', glass: 'Glass', album: 'Album art', none: 'Transparent' };
+  const THEME_FILTER_KEY = 'so.themeFilter';
+
   function themesSection(body, section) {
     const nameInput = h('input', { class: 'input', type: 'text', placeholder: 'New theme name', maxlength: 60, 'aria-label': 'New theme name' });
     const resetBtn = h('button', { class: 'btn btn-small', type: 'button', text: 'Undo my tweaks', onclick: () => run(() => api.resetThemeOverrides(), 'Theme reset to preset') });
@@ -458,9 +484,12 @@
       h('button', { class: 'btn btn-small', type: 'button', text: 'Import…', onclick: () => run(() => api.importTheme(), 'Theme imported') }),
       h('button', { class: 'btn btn-small', type: 'button', text: 'Export…', onclick: () => run(() => api.exportTheme(), 'Theme exported') })
     );
-    const grid = h('div', { class: 'theme-grid' });
+    const gallery = h('div', { class: 'theme-gallery' });
+    const chips = h('div', { class: 'theme-chips', role: 'tablist', 'aria-label': 'Theme categories' });
     const currentLabel = h('div', { class: 'group-title' });
-    body.append(h('section', { class: 'group' }, currentLabel, grid, toolbar));
+    body.append(h('section', { class: 'group' }, currentLabel, chips, gallery, toolbar));
+    let filter = 'all';
+    try { filter = localStorage.getItem(THEME_FILTER_KEY) || 'all'; } catch (_) { /* storage unavailable */ }
     section.groups.forEach((g) => body.appendChild(buildGroup(g)));
 
     let lastSig = '';
@@ -472,9 +501,41 @@
       const sig = JSON.stringify([settings.themeId, settings.customThemes]);
       if (sig === lastSig) return;
       lastSig = sig;
-      const custom = settings.customThemes.map((c) => findTheme(c.id, settings.customThemes));
-      grid.replaceChildren(...PRESETS.concat(custom).map((t) => themeCard(t, t.id === settings.themeId)));
+      renderGallery();
     });
+
+    function renderGallery() {
+      const custom = settings.customThemes.map((c) => findTheme(c.id, settings.customThemes));
+      const cats = CATEGORIES.map((c) => ({ ...c, themes: PRESETS.filter((t) => t.category === c.id) }));
+      if (custom.length) cats.push({ id: 'custom', name: 'My themes', description: 'Themes you saved or imported.', themes: custom });
+      if (filter !== 'all' && !cats.some((c) => c.id === filter)) filter = 'all';
+
+      const chip = (id, label, count) => h('button', {
+        class: 'chip' + (filter === id ? ' active' : ''),
+        type: 'button',
+        role: 'tab',
+        'aria-selected': filter === id ? 'true' : 'false',
+        onclick: () => {
+          filter = id;
+          try { localStorage.setItem(THEME_FILTER_KEY, id); } catch (_) { /* storage unavailable */ }
+          renderGallery();
+        }
+      }, label, h('span', { class: 'chip-count', text: String(count) }));
+      chips.replaceChildren(
+        chip('all', 'All', cats.reduce((n, c) => n + c.themes.length, 0)),
+        ...cats.map((c) => chip(c.id, c.name, c.themes.length))
+      );
+
+      gallery.replaceChildren(...cats.filter((c) => filter === 'all' || c.id === filter).map((c) =>
+        h('div', { class: 'theme-category' },
+          h('div', { class: 'theme-category-head' },
+            h('span', { class: 'theme-category-name', text: c.name }),
+            h('span', { class: 'theme-category-desc', text: c.description })
+          ),
+          h('div', { class: 'theme-grid' }, c.themes.map((t) => themeCard(t, t.id === settings.themeId)))
+        )
+      ));
+    }
   }
 
   function obsSection(body, section) {

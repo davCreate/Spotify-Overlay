@@ -99,7 +99,9 @@
 
     shortcuts: {
       toggleOverlay: 'CommandOrControl+Shift+O',
-      toggleLock: 'CommandOrControl+Shift+L'
+      toggleLock: 'CommandOrControl+Shift+L',
+      sizeUp: 'CommandOrControl+Alt+Up',
+      sizeDown: 'CommandOrControl+Alt+Down'
     },
 
     obs: {

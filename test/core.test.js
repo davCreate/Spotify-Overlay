@@ -35,6 +35,10 @@ test('every preset theme only contains valid values', () => {
     }
   }
   assert.ok(themes.PRESETS.length >= 15);
+  const categories = new Set(themes.CATEGORIES.map((c) => c.id));
+  for (const t of themes.PRESETS) assert.ok(categories.has(t.category), `${t.id} has unknown category ${t.category}`);
+  for (const c of categories) assert.ok(themes.PRESETS.some((t) => t.category === c), `category ${c} is empty`);
+  for (const [id, fx] of Object.entries(themes.EFFECTS)) assert.ok(fx.label && Number.isFinite(fx.margin), `effect ${id}`);
   assert.ok(themes.findTheme(DEFAULT_SETTINGS.themeId), 'default theme exists');
 });
 

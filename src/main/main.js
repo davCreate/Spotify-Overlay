@@ -284,6 +284,20 @@ function updateTrayMenu() {
     { type: 'separator' },
     { label: overlayVisible ? 'Hide overlay' : 'Show overlay', click: () => setOverlayVisible(!overlayVisible) },
     { label: s.layout.locked ? 'Unlock position (move overlay)' : 'Lock position (click-through)', click: () => store.set('layout.locked', !s.layout.locked) },
+    {
+      label: `Size (${Math.round(s.layout.scale * 100)}%)`,
+      submenu: [
+        { label: 'Bigger', click: () => setScale(settings().layout.scale + 0.1) },
+        { label: 'Smaller', click: () => setScale(settings().layout.scale - 0.1) },
+        { type: 'separator' },
+        ...[0.75, 1, 1.25, 1.5, 2].map((v) => ({
+          label: `${Math.round(v * 100)}%`,
+          type: 'radio',
+          checked: Math.abs(s.layout.scale - v) < 0.001,
+          click: () => setScale(v)
+        }))
+      ]
+    },
     { label: 'Settings…', click: () => openSettings() },
     { type: 'separator' },
     updateMenuItem(),
@@ -320,12 +334,20 @@ function createTray() {
 
 /* ------------------------------------------------------------------ shortcuts & startup */
 
+/** Sets the overall overlay size (proportional scale), clamped to 50%–300%. */
+function setScale(value) {
+  const next = Math.round(Math.min(3, Math.max(0.5, value)) * 100) / 100;
+  if (next !== settings().layout.scale) store.set('layout.scale', next);
+}
+
 function registerShortcuts() {
   globalShortcut.unregisterAll();
   const s = settings().shortcuts;
   const actions = {
     toggleOverlay: () => setOverlayVisible(!overlayVisible),
-    toggleLock: () => store.set('layout.locked', !settings().layout.locked)
+    toggleLock: () => store.set('layout.locked', !settings().layout.locked),
+    sizeUp: () => setScale(settings().layout.scale + 0.1),
+    sizeDown: () => setScale(settings().layout.scale - 0.1)
   };
   shortcutStatus = {};
   for (const [name, fn] of Object.entries(actions)) {
@@ -541,6 +563,7 @@ async function init() {
       applyLock();
       updateTrayMenu();
     }
+    if (touched('layout.scale')) updateTrayMenu();
     if (touched('shortcuts')) registerShortcuts();
     if (touched('general.launchAtStartup')) applyLoginItem();
     if (touched('obs')) applyObs();

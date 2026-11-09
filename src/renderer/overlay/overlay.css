@@ -248,19 +248,26 @@ body { font-family: var(--font); color: var(--text); }
 
 /* ---------------------------------------------------------------- edit (unlocked) mode */
 
+/* Kept small and faint, and the same size whatever the overlay scale (--hint-scale = 1 / scale). */
 .edit-hint {
   display: none;
   position: absolute;
   left: 50%;
-  bottom: -22px;
-  transform: translateX(-50%);
-  font-size: 11px;
+  top: 100%;
+  margin-top: calc(9px * var(--hint-scale, 1));
+  transform: translateX(-50%) scale(var(--hint-scale, 1));
+  transform-origin: top center;
+  font-size: 10px;
+  letter-spacing: 0.02em;
   white-space: nowrap;
-  color: #fff;
-  background: rgba(0, 0, 0, 0.75);
-  padding: 2px 8px;
-  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(0, 0, 0, 0.32);
+  padding: 1px 7px;
+  border-radius: 999px;
+  opacity: 0.6;
 }
+.card.fx-layered .edit-hint { margin-top: calc(28px * var(--hint-scale, 1)); }
+.card.fx-extrude .edit-hint, .card.fx-pixel .edit-hint { margin-top: calc(16px * var(--hint-scale, 1)); }
 body.unlocked #scaler { -webkit-app-region: drag; cursor: move; }
 body.unlocked .card { outline: 2px dashed var(--accent); outline-offset: 4px; }
 body.unlocked .edit-hint { display: block; }
@@ -268,3 +275,123 @@ body.unlocked .edit-hint { display: block; }
 /* ---------------------------------------------------------------- message state */
 
 .card.message .art-wrap, .card.message .progress, .card.message .album, .card.message .device { display: none !important; }
+
+/* ---------------------------------------------------------------- theme effects (theme.effect) */
+
+#scaler { perspective: 900px; }
+.viz-bg-slot { z-index: 1; }
+.clip::after { content: none; }
+
+/* 3D tilt: the card is turned in space and sways slowly. */
+.card.fx-tilt { rotate: 0.3 1 0 -17deg; animation: tilt-sway 9s ease-in-out infinite; }
+.card.fx-tilt.idle-float { animation: tilt-sway 9s ease-in-out infinite, float 6s ease-in-out infinite; }
+.card.fx-tilt.idle-breathe { animation: tilt-sway 9s ease-in-out infinite, breathe 5s ease-in-out infinite; }
+.card.fx-tilt:not(.bg-none) { box-shadow: 16px 20px calc(var(--shadow) + 10px) rgba(0, 0, 0, 0.5), 0 0 var(--glow) var(--accent); }
+.card.fx-tilt .clip { box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.22); }
+@keyframes tilt-sway {
+  0%, 100% { rotate: 0.3 1 0 -17deg; }
+  50% { rotate: 0.2 1 0 -9deg; }
+}
+
+/* 3D extruded block: solid side walls in a darker shade of the background. */
+.card.fx-extrude { --depth: color-mix(in srgb, var(--bg) 58%, #000); }
+.card.fx-extrude:not(.bg-none) {
+  box-shadow:
+    1px 1px 0 var(--depth), 2px 2px 0 var(--depth), 3px 3px 0 var(--depth), 4px 4px 0 var(--depth),
+    5px 5px 0 var(--depth), 6px 6px 0 var(--depth), 7px 7px 0 var(--depth), 8px 8px 0 var(--depth),
+    14px 16px var(--shadow) rgba(0, 0, 0, 0.45),
+    0 0 var(--glow) var(--accent);
+}
+.card.fx-extrude .title { text-shadow: 1px 1px 0 var(--depth), 2px 2px 0 var(--depth), 3px 3px 0 rgba(0, 0, 0, 0.25); }
+
+/* 3D stacked cards: ghost cards peek out below. */
+.card.fx-layered:not(.bg-none) {
+  box-shadow:
+    0 14px 0 -5px color-mix(in srgb, var(--bg) 62%, var(--accent)),
+    0 27px 0 -10px color-mix(in srgb, var(--bg) 78%, var(--accent)),
+    0 30px var(--shadow) rgba(0, 0, 0, 0.45),
+    0 0 var(--glow) var(--accent);
+}
+
+/* Soft 3D (neumorphism). */
+.card.fx-neumorph {
+  --nm-dark: color-mix(in srgb, var(--bg) 55%, #000);
+  --nm-light: color-mix(in srgb, var(--bg) 80%, #fff);
+}
+.card.fx-neumorph:not(.bg-none) { box-shadow: 9px 9px 20px var(--nm-dark), -9px -9px 20px var(--nm-light); }
+.card.fx-neumorph .art { box-shadow: 4px 4px 10px var(--nm-dark), -4px -4px 10px var(--nm-light); }
+.card.fx-neumorph .progress .bar { border-radius: 999px; box-shadow: inset 2px 2px 4px var(--nm-dark), inset -2px -2px 4px var(--nm-light); }
+
+/* Neon tube: glowing border and text with a rare flicker. */
+.card.fx-neon::after {
+  border: max(var(--border-w), 2px) solid var(--accent);
+  box-shadow: 0 0 6px var(--accent), 0 0 18px var(--accent), inset 0 0 6px var(--accent), inset 0 0 16px color-mix(in srgb, var(--accent) 45%, transparent);
+  animation: neon-flicker 7s linear infinite;
+}
+.card.fx-neon .title { text-shadow: 0 0 3px #fff, 0 0 10px var(--accent), 0 0 22px var(--accent); }
+.card.fx-neon .artist { text-shadow: 0 0 8px var(--accent2); }
+@keyframes neon-flicker {
+  0%, 17%, 21%, 23%, 61%, 64%, 100% { opacity: 1; }
+  19%, 22%, 62% { opacity: 0.45; }
+}
+
+/* Overlay-style effects drawn on top of the background, behind the text. */
+.card.fx-holo .clip::after,
+.card.fx-aurora .clip::after,
+.card.fx-shimmer .clip::after,
+.card.fx-scanlines .clip::after { content: ''; position: absolute; inset: 0; pointer-events: none; }
+
+/* Holographic foil. */
+.card.fx-holo .clip::after {
+  background: linear-gradient(115deg,
+    transparent 15%, rgba(255, 0, 170, 0.32) 28%, rgba(0, 240, 255, 0.32) 40%,
+    rgba(255, 245, 0, 0.28) 52%, rgba(0, 255, 140, 0.28) 64%, transparent 78%);
+  background-size: 300% 300%;
+  animation: holo-move 7s ease-in-out infinite alternate;
+}
+@keyframes holo-move { from { background-position: 0% 50%; } to { background-position: 100% 50%; } }
+
+/* Aurora / lava: blurred color blobs drifting behind the text. */
+.card.fx-aurora .clip::after {
+  inset: -50%;
+  background:
+    radial-gradient(circle at 32% 42%, color-mix(in srgb, var(--accent) 75%, transparent), transparent 22%),
+    radial-gradient(circle at 66% 58%, color-mix(in srgb, var(--accent2) 75%, transparent), transparent 26%),
+    radial-gradient(circle at 50% 28%, color-mix(in srgb, var(--accent) 45%, transparent), transparent 18%);
+  filter: blur(16px);
+  opacity: 0.75;
+  animation: aurora-drift 16s ease-in-out infinite alternate;
+}
+@keyframes aurora-drift {
+  0% { transform: translate(-8%, -4%) rotate(0deg); }
+  50% { transform: translate(7%, 5%) rotate(35deg); }
+  100% { transform: translate(-3%, 8%) rotate(-25deg); }
+}
+
+/* Shimmer: a sheen sweeps across every few seconds. */
+.card.fx-shimmer .clip::after {
+  background: linear-gradient(110deg, transparent 38%, rgba(255, 255, 255, 0.3) 50%, transparent 62%);
+  background-size: 250% 100%;
+  animation: shimmer-sweep 5s ease-in-out infinite;
+}
+@keyframes shimmer-sweep { 0% { background-position: 150% 0; } 55%, 100% { background-position: -50% 0; } }
+
+/* CRT scanlines. */
+.card.fx-scanlines .clip { box-shadow: inset 0 0 28px rgba(0, 0, 0, 0.65); }
+.card.fx-scanlines .clip::after {
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.3) 0 1px, transparent 1px 3px);
+  animation: crt-flicker 3s steps(2) infinite;
+}
+.card.fx-scanlines .line { text-shadow: 0 0 6px color-mix(in srgb, var(--text) 65%, transparent); }
+@keyframes crt-flicker { 50% { opacity: 0.8; } }
+
+/* Pixel / 8-bit. */
+.card.fx-pixel, .card.fx-pixel .art, .card.fx-pixel .progress .bar, .card.fx-pixel .progress .fill { border-radius: 0; }
+.card.fx-pixel .art-img { image-rendering: pixelated; }
+.card.fx-pixel:not(.bg-none) { box-shadow: 6px 6px 0 var(--accent), 6px 6px 0 3px rgba(0, 0, 0, 0.6); }
+.card.fx-pixel .title { text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.55); }
+
+/* Sticker. */
+.card.fx-sticker { rotate: -2.5deg; }
+.card.fx-sticker::after { border: max(var(--border-w), 5px) solid #fff; }
+.card.fx-sticker:not(.bg-none) { box-shadow: 3px 7px 14px rgba(0, 0, 0, 0.4), 0 0 var(--glow) var(--accent); }
