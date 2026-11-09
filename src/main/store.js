@@ -52,6 +52,7 @@ const NUMBER_LIMITS = {
 
 /** Allowed values for string settings that are enumerations. */
 const ENUMS = {
+  'general.language': ['auto', 'en', 'es', 'fr', 'ru'],
   'layout.style': ['horizontal', 'vertical', 'compact', 'minimal'],
   'art.shape': ['square', 'rounded', 'circle', 'vinyl'],
   'text.align': ['left', 'center', 'right'],

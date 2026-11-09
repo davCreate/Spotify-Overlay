@@ -56,10 +56,18 @@ Add a `preset(...)` entry to `PRESETS` in `src/shared/themes.js`. The full forma
 
 Add a `case` to `Visualizer.draw()` in `src/renderer/overlay/visualizer.js`. Then add the style id to `ENUMS['visualizer.style']` in `store.js` and to the options in `schema.js`.
 
+## Translations
+
+The app UI is available in English, Spanish, French and Russian. The repository itself (code, comments, docs, commits) stays in English.
+
+- Write UI text in English and wrap it in `tr('...')` (renderer and main process). Use placeholders for values: `tr('Version {version}', { version })`.
+- Add the translation of every new string to `src/shared/locales/es.js`, `fr.js` and `ru.js`. The English text is the key.
+- `npm test` fails if a string is missing in any language or a translation drops a `{placeholder}`. `node test/i18n.test.js --list` prints the missing keys.
+
 ## Code style
 
 - Plain modern JavaScript (ES2020+), 2-space indentation, single quotes and semicolons.
-- No new runtime dependencies without discussing them first. The app currently has zero.
+- No new runtime dependencies without discussing them first. The only one is `electron-updater`.
 - Never use `innerHTML` with data from Spotify or from users. Build DOM nodes instead (see `h()` in `settings.js`).
 - Run `npm run lint && npm test` before you push.
 

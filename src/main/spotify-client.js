@@ -83,9 +83,9 @@ class SpotifyClient extends EventEmitter {
     this.emit('auth', this.status());
   }
 
-  async login(openUrl, port) {
+  async login(openUrl, port, translate) {
     this.lastError = null;
-    const tokens = await auth.login({ clientId: this.getClientId(), port, openUrl });
+    const tokens = await auth.login({ clientId: this.getClientId(), port, openUrl, translate });
     this.setTokens(tokens);
     await this.fetchUser();
     this.emitStatus();

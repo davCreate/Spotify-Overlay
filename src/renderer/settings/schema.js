@@ -69,6 +69,12 @@
       icon: 'M19.4 13a7.7 7.7 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.3 7.3 0 0 0-1.7-1L15 3h-4l-.3 2.9a7.3 7.3 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.7 7.7 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1c.5.4 1.1.7 1.7 1L11 21h4l.3-2.9c.6-.3 1.2-.6 1.7-1l2.5 1 2-3.5zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z',
       groups: [
         {
+          title: 'Language',
+          fields: [
+            { key: 'general.language', label: 'App language', type: 'select', options: () => [{ value: 'auto', label: 'Automatic (system language)' }].concat(window.SO_I18N.LANGUAGES.map((l) => ({ value: l.id, label: l.name }))), help: 'Language of the settings, tray menu and overlay messages.' }
+          ]
+        },
+        {
           title: 'Startup',
           fields: [
             { key: 'general.launchAtStartup', label: 'Launch when I sign in to my computer', type: 'toggle', help: 'Only works in the installed app, not when running from source.' },

@@ -75,9 +75,9 @@ function toTokens(body, previousRefresh) {
 
 /**
  * Runs the interactive login. Resolves with tokens.
- * @param {{clientId:string, port:number, openUrl:(url:string)=>void}} opts
+ * @param {{clientId:string, port:number, openUrl:(url:string)=>void, translate?:(text:string, vars?:object)=>string}} opts
  */
-function login({ clientId, port, openUrl }) {
+function login({ clientId, port, openUrl, translate = (text) => text }) {
   return new Promise((resolve, reject) => {
     if (!clientId || !/^[0-9a-zA-Z]{16,64}$/.test(clientId)) {
       reject(new Error('Enter a valid Spotify Client ID in Settings → Account first.'));
@@ -97,25 +97,25 @@ function login({ clientId, port, openUrl }) {
       }
       const send = (status, title, msg, ok) => {
         res.writeHead(status, { 'Content-Type': 'text/html; charset=utf-8' });
-        res.end(resultPage(title, msg, ok));
+        res.end(resultPage(translate(title), msg, ok));
       };
       if (finished) {
-        send(400, 'Already handled', 'You can close this tab.', false);
+        send(400, 'Already handled', translate('You can close this tab.'), false);
         return;
       }
       if (url.searchParams.get('state') !== state) {
-        send(400, 'Login failed', 'State mismatch. Please try again from the app.', false);
+        send(400, 'Login failed', translate('State mismatch. Please try again from the app.'), false);
         return;
       }
       const error = url.searchParams.get('error');
       if (error) {
-        send(400, 'Login cancelled', `Spotify returned: ${error}. You can close this tab.`, false);
+        send(400, 'Login cancelled', translate('Spotify returned: {error}. You can close this tab.', { error }), false);
         done(new Error(error === 'access_denied' ? 'Login was cancelled.' : `Spotify error: ${error}`));
         return;
       }
       const code = url.searchParams.get('code');
       if (!code) {
-        send(400, 'Login failed', 'No authorization code received.', false);
+        send(400, 'Login failed', translate('No authorization code received.'), false);
         return;
       }
       try {
@@ -126,7 +126,7 @@ function login({ clientId, port, openUrl }) {
           client_id: clientId,
           code_verifier: verifier
         });
-        send(200, 'Connected!', 'Spotify Overlay is now connected. You can close this tab.', true);
+        send(200, 'Connected!', translate('Spotify Overlay is now connected. You can close this tab.'), true);
         done(null, toTokens(body));
       } catch (err) {
         send(500, 'Login failed', err.message, false);

@@ -9,6 +9,7 @@
   const { SECTIONS } = window.SO_SCHEMA;
   const { PRESETS, FONTS, EFFECTS, CATEGORIES, getEffectiveTheme, findTheme } = window.SO_THEMES;
   const { getPath } = window.SO_DEFAULTS;
+  const I18N = window.SO_I18N;
 
   const REPO_URL = 'https://github.com/davCreate/Spotify-Overlay';
   const DASHBOARD_URL = 'https://developer.spotify.com/dashboard';
@@ -24,6 +25,22 @@
   let currentSection = 'account';
   let bindings = [];
   let customUpdaters = [];
+  let lang = 'en';
+
+  /** Translates English UI text into the selected language (see src/shared/i18n.js). */
+  const tr = (text, vars) => I18N.translate(lang, text, vars);
+
+  /** Translates a template with {0}, {1}... placeholders and puts DOM nodes (links, bold words) in them. */
+  function rich(template, ...nodes) {
+    return tr(template).split(/(\{\d+\})/).filter(Boolean).map((part) => {
+      const m = /^\{(\d+)\}$/.exec(part);
+      return m ? nodes[Number(m[1])] : part;
+    });
+  }
+
+  function currentLanguage() {
+    return I18N.resolveLanguage(settings && settings.general.language, appInfo.locale || navigator.language);
+  }
 
   /* ---------------------------------------------------------------- DOM helpers */
 
@@ -76,10 +93,10 @@
   async function run(fn, okMessage) {
     try {
       const r = await fn();
-      if (okMessage && r !== false) toast(okMessage);
+      if (okMessage && r !== false) toast(tr(okMessage));
       return r;
     } catch (err) {
-      toast(errMsg(err), true);
+      toast(tr(errMsg(err)), true);
       return undefined;
     }
   }
@@ -95,7 +112,7 @@
       document.execCommand('copy');
       ta.remove();
     }
-    toast('Copied to clipboard');
+    toast(tr('Copied to clipboard'));
   }
 
   /* ---------------------------------------------------------------- values */
@@ -164,7 +181,7 @@
   }
 
   function prettyAccelerator(acc) {
-    if (!acc) return 'Disabled';
+    if (!acc) return tr('Disabled');
     const mac = api.platform === 'darwin';
     return acc
       .replace(/CommandOrControl/g, mac ? '⌘' : 'Ctrl')
@@ -184,14 +201,14 @@
 
     switch (field.type) {
       case 'toggle': {
-        const input = h('input', { type: 'checkbox', 'aria-label': field.label, onchange: () => writeValue(key, input.checked) });
+        const input = h('input', { type: 'checkbox', 'aria-label': tr(field.label), onchange: () => writeValue(key, input.checked) });
         control = h('label', { class: 'switch' }, input, h('span', { class: 'track' }));
         update = (v) => { input.checked = Boolean(v); };
         break;
       }
       case 'range': {
         const out = h('span', { class: 'range-value' });
-        const input = h('input', { type: 'range', min: field.min, max: field.max, step: field.step || 1, 'aria-label': field.label });
+        const input = h('input', { type: 'range', min: field.min, max: field.max, step: field.step || 1, 'aria-label': tr(field.label) });
         input.addEventListener('input', () => {
           const v = Number(input.value);
           out.textContent = formatRange(field, v);
@@ -206,15 +223,15 @@
       }
       case 'select': {
         const options = typeof field.options === 'function' ? field.options() : field.options;
-        const select = h('select', { class: 'input', 'aria-label': field.label, onchange: () => writeValue(key, select.value) },
-          options.map((o) => h('option', { value: o.value, text: o.label })));
+        const select = h('select', { class: 'input', 'aria-label': tr(field.label), onchange: () => writeValue(key, select.value) },
+          options.map((o) => h('option', { value: o.value, text: tr(o.label) })));
         control = select;
         update = (v) => { select.value = v; };
         break;
       }
       case 'color': {
-        const picker = h('input', { type: 'color', 'aria-label': field.label });
-        const hex = h('input', { class: 'input mono', type: 'text', maxlength: 7, spellcheck: 'false', 'aria-label': field.label + ' hex value' });
+        const picker = h('input', { type: 'color', 'aria-label': tr(field.label) });
+        const hex = h('input', { class: 'input mono', type: 'text', maxlength: 7, spellcheck: 'false', 'aria-label': tr(field.label) });
         picker.addEventListener('input', () => {
           hex.value = picker.value;
           writeValue(key, picker.value);
@@ -225,7 +242,7 @@
           if (/^#[0-9a-fA-F]{3}$/.test(v)) v = '#' + v.slice(1).split('').map((c) => c + c).join('');
           if (/^#[0-9a-fA-F]{6}$/.test(v)) writeValue(key, v.toLowerCase());
           else {
-            toast('Use a hex color like #1ed760', true);
+            toast(tr('Use a hex color like #1ed760'), true);
             hex.value = readValue(key);
           }
         });
@@ -237,11 +254,11 @@
         break;
       }
       case 'number': {
-        const input = h('input', { class: 'input', type: 'number', min: field.min, max: field.max, step: field.step || 1, 'aria-label': field.label, style: { width: '120px' } });
+        const input = h('input', { class: 'input', type: 'number', min: field.min, max: field.max, step: field.step || 1, 'aria-label': tr(field.label), style: { width: '120px' } });
         input.addEventListener('change', () => {
           const v = Math.round(Number(input.value));
           if (!Number.isFinite(v) || v < field.min || v > field.max) {
-            toast(`Enter a number between ${field.min} and ${field.max}`, true);
+            toast(tr('Enter a number between {min} and {max}', { min: field.min, max: field.max }), true);
             input.value = readValue(key);
             return;
           }
@@ -256,7 +273,7 @@
         const badge = h('span', { class: 'badge' });
         input.addEventListener('focus', () => {
           input.classList.add('recording');
-          input.value = 'Press keys…';
+          input.value = tr('Press keys…');
         });
         input.addEventListener('blur', () => {
           input.classList.remove('recording');
@@ -273,7 +290,7 @@
           if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) return;
           const acc = acceleratorFromEvent(e);
           if (!acc) {
-            input.value = 'Use a modifier (Ctrl/Alt/Shift) + key';
+            input.value = tr('Use a modifier (Ctrl/Alt/Shift) + key');
             return;
           }
           writeValue(key, acc);
@@ -284,7 +301,7 @@
           if (document.activeElement !== input) input.value = prettyAccelerator(v);
           const name = key.split('.')[1];
           const st = shortcutStatus[name];
-          badge.textContent = st === 'ok' ? 'Active' : st === 'in-use' ? 'Used by another app' : st === 'invalid' ? 'Invalid' : st === 'disabled' ? 'Off' : '';
+          badge.textContent = tr(st === 'ok' ? 'Active' : st === 'in-use' ? 'Used by another app' : st === 'invalid' ? 'Invalid' : st === 'disabled' ? 'Off' : '');
           badge.className = 'badge ' + (st === 'ok' ? 'ok' : st === 'in-use' || st === 'invalid' ? 'warn' : '');
         };
         break;
@@ -302,7 +319,7 @@
   function buildField(field) {
     const { control, update } = buildControl(field);
     const row = h('div', { class: 'field' },
-      h('div', null, h('div', { class: 'field-label', text: field.label }), field.help ? h('div', { class: 'field-help', text: field.help }) : null),
+      h('div', null, h('div', { class: 'field-label', text: tr(field.label) }), field.help ? h('div', { class: 'field-help', text: tr(field.help) }) : null),
       field.type === 'range' || field.type === 'shortcut' ? control : h('div', { class: 'field-control' }, control)
     );
     bindings.push({ field, row, update });
@@ -311,7 +328,7 @@
 
   const setScale = (v) => {
     const next = Math.round(Math.min(3, Math.max(0.5, v)) * 100) / 100;
-    return run(() => api.setSetting('layout.scale', next), `Size: ${Math.round(next * 100)}%`);
+    return run(() => api.setSetting('layout.scale', next), tr('Size: {percent}%', { percent: Math.round(next * 100) }));
   };
   const ACTIONS = {
     'reset-position': () => run(() => api.resetOverlayPosition(), 'Overlay moved'),
@@ -325,9 +342,9 @@
 
   function buildGroup(group) {
     const node = h('section', { class: 'group' },
-      h('div', { class: 'group-title', text: group.title }),
+      h('div', { class: 'group-title', text: tr(group.title) }),
       h('div', { class: 'group-body' }, group.fields.map(buildField)),
-      group.actions ? h('div', { class: 'group-actions' }, group.actions.map((a) => h('button', { class: 'btn btn-small', type: 'button', text: a.label, onclick: ACTIONS[a.id] }))) : null
+      group.actions ? h('div', { class: 'group-actions' }, group.actions.map((a) => h('button', { class: 'btn btn-small', type: 'button', text: tr(a.label), onclick: ACTIONS[a.id] }))) : null
     );
     if (group.showIf) bindings.push({ group, row: node });
     return node;
@@ -350,38 +367,38 @@
 
   function accountSection(body) {
     const statusBox = h('section', { class: 'group' });
-    const clientInput = h('input', { class: 'input mono', type: 'text', placeholder: 'e.g. 1a2b3c4d5e6f…', spellcheck: 'false', 'aria-label': 'Spotify Client ID' });
+    const clientInput = h('input', { class: 'input mono', type: 'text', placeholder: '1a2b3c4d5e6f…', spellcheck: 'false', 'aria-label': tr('Spotify Client ID') });
     clientInput.addEventListener('change', () => run(() => api.setSetting('account.clientId', clientInput.value.trim()), 'Client ID saved'));
-    const portInput = h('input', { class: 'input', type: 'number', min: 1024, max: 65535, style: { width: '120px' }, 'aria-label': 'Redirect port' });
+    const portInput = h('input', { class: 'input', type: 'number', min: 1024, max: 65535, style: { width: '120px' }, 'aria-label': tr('Redirect port') });
     portInput.addEventListener('change', () => {
       const v = Math.round(Number(portInput.value));
       if (!Number.isFinite(v) || v < 1024 || v > 65535) {
-        toast('Port must be between 1024 and 65535', true);
+        toast(tr('Port must be between 1024 and 65535'), true);
         portInput.value = settings.account.redirectPort;
         return;
       }
       run(() => api.setSetting('account.redirectPort', v), 'Port saved — update the Redirect URI in your Spotify app too');
     });
-    const uriInput = h('input', { class: 'input mono', type: 'text', readonly: true, 'aria-label': 'Redirect URI' });
+    const uriInput = h('input', { class: 'input mono', type: 'text', readonly: true, 'aria-label': tr('Redirect URI') });
 
     const guide = h('section', { class: 'group' },
-      h('div', { class: 'group-title', text: 'One-time setup (about 2 minutes)' }),
+      h('div', { class: 'group-title', text: tr('One-time setup (about 2 minutes)') }),
       h('ol', { class: 'steps' },
-        h('li', null, 'Open the ', h('a', { href: '#', onclick: (e) => { e.preventDefault(); api.openExternal(DASHBOARD_URL); } }, 'Spotify Developer Dashboard'), ' and log in with your Spotify account.'),
-        h('li', null, 'Click ', h('b', { text: 'Create app' }), '. Use any name and description (for example “My Overlay”).'),
-        h('li', null, 'In ', h('b', { text: 'Redirect URIs' }), ' add exactly this address, then click Add:',
-          h('div', { class: 'copy-row' }, uriInput, h('button', { class: 'btn btn-small', type: 'button', text: 'Copy', onclick: () => copyText(uriInput.value) }))),
-        h('li', null, 'Under “Which API/SDKs are you planning to use?” tick ', h('b', { text: 'Web API' }), ', accept the terms and Save.'),
-        h('li', null, 'Open the app’s ', h('b', { text: 'Settings' }), ', copy the ', h('b', { text: 'Client ID' }), ' and paste it below. No Client Secret is needed.'),
-        h('li', null, 'Click ', h('b', { text: 'Connect Spotify' }), ' and approve access in your browser.')
+        h('li', null, rich('Open the {0} and log in with your Spotify account.', h('a', { href: '#', onclick: (e) => { e.preventDefault(); api.openExternal(DASHBOARD_URL); } }, 'Spotify Developer Dashboard'))),
+        h('li', null, rich('Click {0}. Use any name and description (for example “My Overlay”).', h('b', { text: 'Create app' }))),
+        h('li', null, rich('In {0} add exactly this address, then click Add:', h('b', { text: 'Redirect URIs' })),
+          h('div', { class: 'copy-row' }, uriInput, h('button', { class: 'btn btn-small', type: 'button', text: tr('Copy'), onclick: () => copyText(uriInput.value) }))),
+        h('li', null, rich('Under “Which API/SDKs are you planning to use?” tick {0}, accept the terms and Save.', h('b', { text: 'Web API' }))),
+        h('li', null, rich('Open the app’s {0}, copy the {1} and paste it below. No Client Secret is needed.', h('b', { text: 'Settings' }), h('b', { text: 'Client ID' }))),
+        h('li', null, rich('Click {0} and approve access in your browser.', h('b', { text: tr('Connect Spotify') })))
       )
     );
 
     const creds = h('section', { class: 'group' },
-      h('div', { class: 'group-title', text: 'Spotify app credentials' }),
+      h('div', { class: 'group-title', text: tr('Spotify app credentials') }),
       h('div', { class: 'group-body' },
-        h('div', { class: 'field' }, h('div', null, h('div', { class: 'field-label', text: 'Client ID' }), h('div', { class: 'field-help', text: 'Stored on this computer only.' })), h('div', { class: 'field-control' }, clientInput)),
-        h('div', { class: 'field' }, h('div', null, h('div', { class: 'field-label', text: 'Redirect port' }), h('div', { class: 'field-help', text: 'Change only if 8888 is used by another program.' })), h('div', { class: 'field-control' }, portInput))
+        h('div', { class: 'field' }, h('div', null, h('div', { class: 'field-label', text: 'Client ID' }), h('div', { class: 'field-help', text: tr('Stored on this computer only.') })), h('div', { class: 'field-control' }, clientInput)),
+        h('div', { class: 'field' }, h('div', null, h('div', { class: 'field-label', text: tr('Redirect port') }), h('div', { class: 'field-help', text: tr('Change only if 8888 is used by another program.') })), h('div', { class: 'field-control' }, portInput))
       )
     );
 
@@ -397,16 +414,18 @@
       const avatar = user && user.image
         ? h('img', { class: 'avatar', src: user.image, alt: '' })
         : h('div', { class: 'avatar', text: user && user.name ? user.name.slice(0, 1).toUpperCase() : '?' });
-      const title = auth.connected ? `Connected${user && user.name ? ' as ' + user.name : ''}` : auth.loggingIn ? 'Waiting for you to approve in the browser…' : 'Not connected';
-      const sub = auth.connected
+      const title = auth.connected
+        ? (user && user.name ? tr('Connected as {name}', { name: user.name }) : tr('Connected'))
+        : tr(auth.loggingIn ? 'Waiting for you to approve in the browser…' : 'Not connected');
+      const sub = tr(auth.connected
         ? 'Your overlay updates live from Spotify.'
-        : settings.account.clientId ? 'Click Connect to sign in.' : 'Follow the steps below to get your Client ID.';
+        : settings.account.clientId ? 'Click Connect to sign in.' : 'Follow the steps below to get your Client ID.');
       const btn = auth.connected
-        ? h('button', { class: 'btn btn-danger', type: 'button', text: 'Disconnect', onclick: () => run(() => api.logout(), 'Disconnected') })
-        : h('button', { class: 'btn btn-primary', type: 'button', text: auth.loggingIn ? 'Connecting…' : 'Connect Spotify', disabled: auth.loggingIn || !settings.account.clientId, onclick: () => run(() => api.login()) });
+        ? h('button', { class: 'btn btn-danger', type: 'button', text: tr('Disconnect'), onclick: () => run(() => api.logout(), 'Disconnected') })
+        : h('button', { class: 'btn btn-primary', type: 'button', text: tr(auth.loggingIn ? 'Connecting…' : 'Connect Spotify'), disabled: auth.loggingIn || !settings.account.clientId, onclick: () => run(() => api.login()) });
       statusBox.append(h('div', { class: 'card-row' },
         avatar,
-        h('div', { class: 'grow' }, h('div', { class: 'field-label', text: title }), h('div', { class: 'muted', text: sub }), auth.error ? h('div', { class: 'error-text', text: auth.error }) : null),
+        h('div', { class: 'grow' }, h('div', { class: 'field-label', text: title }), h('div', { class: 'muted', text: sub }), auth.error ? h('div', { class: 'error-text', text: tr(auth.error) }) : null),
         btn
       ));
     });
@@ -445,18 +464,19 @@
     frame.style.setProperty('--p-bg', v.bg);
     const tags = [BG_LABELS[v.background] || v.background, effect ? EFFECTS[effect].label : null, (FONTS[v.font] || FONTS.system).label]
       .filter(Boolean)
+      .map((tag) => tr(tag))
       .map((tag, i) => h('span', { class: 'theme-tag' + (i === 1 && effect ? ' fx' : ''), text: tag }));
-    if (v.useAlbumColors) tags.push(h('span', { class: 'theme-tag', text: 'Album colors' }));
-    const card = h('button', { class: 'theme-card' + (active ? ' active' : ''), type: 'button', 'aria-pressed': active ? 'true' : 'false', title: t.description || t.name, onclick: () => run(() => api.applyTheme(t.id)) },
+    if (v.useAlbumColors) tags.push(h('span', { class: 'theme-tag', text: tr('Album colors') }));
+    const card = h('button', { class: 'theme-card' + (active ? ' active' : ''), type: 'button', 'aria-pressed': active ? 'true' : 'false', title: tr(t.description) || t.name, onclick: () => run(() => api.applyTheme(t.id)) },
       frame,
       h('div', { class: 'theme-meta' },
         h('div', { class: 'theme-name', text: t.name }),
-        h('div', { class: 'theme-desc', text: t.description || 'Custom theme' }),
+        h('div', { class: 'theme-desc', text: tr(t.description || 'Custom theme') }),
         h('div', { class: 'theme-tags' }, tags)
       )
     );
     if (t.custom) {
-      const del = h('span', { class: 'theme-delete', role: 'button', tabindex: '0', title: 'Delete theme', 'aria-label': `Delete ${t.name}`, text: '✕' });
+      const del = h('span', { class: 'theme-delete', role: 'button', tabindex: '0', title: tr('Delete theme'), 'aria-label': tr('Delete theme'), text: '✕' });
       const doDelete = (e) => {
         e.stopPropagation();
         e.preventDefault();
@@ -473,19 +493,19 @@
   const THEME_FILTER_KEY = 'so.themeFilter';
 
   function themesSection(body, section) {
-    const nameInput = h('input', { class: 'input', type: 'text', placeholder: 'New theme name', maxlength: 60, 'aria-label': 'New theme name' });
-    const resetBtn = h('button', { class: 'btn btn-small', type: 'button', text: 'Undo my tweaks', onclick: () => run(() => api.resetThemeOverrides(), 'Theme reset to preset') });
+    const nameInput = h('input', { class: 'input', type: 'text', placeholder: tr('New theme name'), maxlength: 60, 'aria-label': tr('New theme name') });
+    const resetBtn = h('button', { class: 'btn btn-small', type: 'button', text: tr('Undo my tweaks'), onclick: () => run(() => api.resetThemeOverrides(), 'Theme reset to preset') });
     const toolbar = h('div', { class: 'group-actions theme-toolbar' },
       nameInput,
-      h('button', { class: 'btn btn-small btn-primary', type: 'button', text: 'Save as new theme', onclick: () => {
-        run(() => api.saveCustomTheme(nameInput.value.trim() || 'My theme'), 'Theme saved').then(() => { nameInput.value = ''; });
+      h('button', { class: 'btn btn-small btn-primary', type: 'button', text: tr('Save as new theme'), onclick: () => {
+        run(() => api.saveCustomTheme(nameInput.value.trim() || tr('My theme')), 'Theme saved').then(() => { nameInput.value = ''; });
       } }),
       resetBtn,
-      h('button', { class: 'btn btn-small', type: 'button', text: 'Import…', onclick: () => run(() => api.importTheme(), 'Theme imported') }),
-      h('button', { class: 'btn btn-small', type: 'button', text: 'Export…', onclick: () => run(() => api.exportTheme(), 'Theme exported') })
+      h('button', { class: 'btn btn-small', type: 'button', text: tr('Import…'), onclick: () => run(() => api.importTheme(), 'Theme imported') }),
+      h('button', { class: 'btn btn-small', type: 'button', text: tr('Export…'), onclick: () => run(() => api.exportTheme(), 'Theme exported') })
     );
     const gallery = h('div', { class: 'theme-gallery' });
-    const chips = h('div', { class: 'theme-chips', role: 'tablist', 'aria-label': 'Theme categories' });
+    const chips = h('div', { class: 'theme-chips', role: 'tablist', 'aria-label': tr('Theme categories') });
     const currentLabel = h('div', { class: 'group-title' });
     body.append(h('section', { class: 'group' }, currentLabel, chips, gallery, toolbar));
     let filter = 'all';
@@ -497,8 +517,8 @@
       const hasOverrides = Object.keys(settings.themeOverrides || {}).length > 0;
       resetBtn.disabled = !hasOverrides;
       const active = findTheme(settings.themeId, settings.customThemes);
-      currentLabel.textContent = `Current theme: ${active ? active.name : 'Unknown'}${hasOverrides ? ' (modified)' : ''}`;
-      const sig = JSON.stringify([settings.themeId, settings.customThemes]);
+      currentLabel.textContent = tr(hasOverrides ? 'Current theme: {name} (modified)' : 'Current theme: {name}', { name: active ? active.name : tr('Unknown') });
+      const sig = JSON.stringify([settings.themeId, settings.customThemes, lang]);
       if (sig === lastSig) return;
       lastSig = sig;
       renderGallery();
@@ -520,7 +540,7 @@
           try { localStorage.setItem(THEME_FILTER_KEY, id); } catch (_) { /* storage unavailable */ }
           renderGallery();
         }
-      }, label, h('span', { class: 'chip-count', text: String(count) }));
+      }, tr(label), h('span', { class: 'chip-count', text: String(count) }));
       chips.replaceChildren(
         chip('all', 'All', cats.reduce((n, c) => n + c.themes.length, 0)),
         ...cats.map((c) => chip(c.id, c.name, c.themes.length))
@@ -529,8 +549,8 @@
       gallery.replaceChildren(...cats.filter((c) => filter === 'all' || c.id === filter).map((c) =>
         h('div', { class: 'theme-category' },
           h('div', { class: 'theme-category-head' },
-            h('span', { class: 'theme-category-name', text: c.name }),
-            h('span', { class: 'theme-category-desc', text: c.description })
+            h('span', { class: 'theme-category-name', text: tr(c.name) }),
+            h('span', { class: 'theme-category-desc', text: tr(c.description) })
           ),
           h('div', { class: 'theme-grid' }, c.themes.map((t) => themeCard(t, t.id === settings.themeId)))
         )
@@ -540,62 +560,62 @@
 
   function obsSection(body, section) {
     section.groups.forEach((g) => body.appendChild(buildGroup(g)));
-    const url = h('input', { class: 'input mono', type: 'text', readonly: true, 'aria-label': 'Browser source URL' });
+    const url = h('input', { class: 'input mono', type: 'text', readonly: true, 'aria-label': tr('Browser source URL') });
     const status = h('div', { class: 'muted' });
     body.appendChild(h('section', { class: 'group' },
-      h('div', { class: 'group-title', text: 'Add it to OBS' }),
+      h('div', { class: 'group-title', text: tr('Add it to OBS') }),
       h('div', { class: 'info-box' },
         status,
-        h('div', { class: 'copy-row' }, url, h('button', { class: 'btn btn-small', type: 'button', text: 'Copy', onclick: () => copyText(url.value) })),
+        h('div', { class: 'copy-row' }, url, h('button', { class: 'btn btn-small', type: 'button', text: tr('Copy'), onclick: () => copyText(url.value) })),
         h('ol', { class: 'steps', style: { paddingLeft: '20px' } },
-          h('li', null, 'In OBS, click ', h('b', { text: '+' }), ' under Sources and choose ', h('b', { text: 'Browser' }), '.'),
-          h('li', null, 'Paste the URL above. Set width to about ', h('b', { text: '900' }), ' and height to ', h('b', { text: '400' }), '.'),
-          h('li', null, 'Leave the custom CSS empty. The background is already transparent.'),
-          h('li', null, 'Every change you make here appears in OBS instantly.')
+          h('li', null, rich('In OBS, click {0} under Sources and choose {1}.', h('b', { text: '+' }), h('b', { text: 'Browser' }))),
+          h('li', null, rich('Paste the URL above. Set width to about {0} and height to {1}.', h('b', { text: '900' }), h('b', { text: '400' }))),
+          h('li', null, tr('Leave the custom CSS empty. The background is already transparent.')),
+          h('li', null, tr('Every change you make here appears in OBS instantly.'))
         ),
-        h('p', { class: 'muted', text: 'Tip: the “Stream Clean” theme is made for streaming. The browser source always uses the simulated visualizer, because a browser page cannot capture system audio.' })
+        h('p', { class: 'muted', text: tr('Tip: the “Stream Clean” theme is made for streaming. The browser source always uses the simulated visualizer, because a browser page cannot capture system audio.') })
       )
     ));
     customUpdaters.push(() => {
       url.value = `http://127.0.0.1:${settings.obs.port}/`;
       status.textContent = obsStatus.error
-        ? `Could not start: ${obsStatus.error}`
-        : settings.obs.enabled ? (obsStatus.running ? 'Server running.' : 'Starting…') : 'Server is off. Enable it above.';
+        ? tr('Could not start: {error}', { error: obsStatus.error })
+        : tr(settings.obs.enabled ? (obsStatus.running ? 'Server running.' : 'Starting…') : 'Server is off. Enable it above.');
       status.className = obsStatus.error ? 'error-text' : 'muted';
     });
   }
 
   function advancedSection(body) {
     let confirmTimer = null;
-    const resetBtn = h('button', { class: 'btn btn-danger', type: 'button', text: 'Reset all settings' });
+    const resetBtn = h('button', { class: 'btn btn-danger', type: 'button', text: tr('Reset all settings') });
     resetBtn.addEventListener('click', () => {
       if (!resetBtn.classList.contains('confirm')) {
         resetBtn.classList.add('confirm');
-        resetBtn.textContent = 'Click again to confirm';
+        resetBtn.textContent = tr('Click again to confirm');
         confirmTimer = setTimeout(() => {
           resetBtn.classList.remove('confirm');
-          resetBtn.textContent = 'Reset all settings';
+          resetBtn.textContent = tr('Reset all settings');
         }, 4000);
         return;
       }
       clearTimeout(confirmTimer);
       resetBtn.classList.remove('confirm');
-      resetBtn.textContent = 'Reset all settings';
+      resetBtn.textContent = tr('Reset all settings');
       run(() => api.resetSettings(), 'Settings reset (your Spotify connection was kept)');
     });
     body.append(
       h('section', { class: 'group' },
-        h('div', { class: 'group-title', text: 'Backup' }),
-        h('div', { class: 'info-box' }, h('p', { class: 'muted', text: 'Export your whole configuration (without your Client ID) to share it or move it to another computer.' })),
+        h('div', { class: 'group-title', text: tr('Backup') }),
+        h('div', { class: 'info-box' }, h('p', { class: 'muted', text: tr('Export your whole configuration (without your Client ID) to share it or move it to another computer.') })),
         h('div', { class: 'group-actions' },
-          h('button', { class: 'btn', type: 'button', text: 'Export settings…', onclick: () => run(() => api.exportSettings(), 'Settings exported') }),
-          h('button', { class: 'btn', type: 'button', text: 'Import settings…', onclick: () => run(() => api.importSettings(), 'Settings imported') }),
-          h('button', { class: 'btn', type: 'button', text: 'Open settings folder', onclick: () => run(() => api.openConfigFolder()) })
+          h('button', { class: 'btn', type: 'button', text: tr('Export settings…'), onclick: () => run(() => api.exportSettings(), 'Settings exported') }),
+          h('button', { class: 'btn', type: 'button', text: tr('Import settings…'), onclick: () => run(() => api.importSettings(), 'Settings imported') }),
+          h('button', { class: 'btn', type: 'button', text: tr('Open settings folder'), onclick: () => run(() => api.openConfigFolder()) })
         )
       ),
       h('section', { class: 'group' },
-        h('div', { class: 'group-title', text: 'Danger zone' }),
-        h('div', { class: 'info-box' }, h('p', { class: 'muted', text: 'Restore every option to its default value. Your Spotify login, Client ID and overlay position are kept.' })),
+        h('div', { class: 'group-title', text: tr('Danger zone') }),
+        h('div', { class: 'info-box' }, h('p', { class: 'muted', text: tr('Restore every option to its default value. Your Spotify login, Client ID and overlay position are kept.') })),
         h('div', { class: 'group-actions' }, resetBtn)
       )
     );
@@ -606,20 +626,20 @@
     body.append(
       h('section', { class: 'group' },
         h('div', { class: 'info-box' },
-          h('p', null, h('b', { text: 'Spotify Overlay' }), ' is a free, open-source, always-on-top “now playing” overlay with themes and audio visualizers.'),
+          h('p', null, rich('{0} is a free, open-source, always-on-top “now playing” overlay with themes and audio visualizers.', h('b', { text: 'Spotify Overlay' }))),
           versions,
-          h('p', { class: 'muted', text: 'This project is not affiliated with, endorsed by, or sponsored by Spotify. Spotify is a trademark of Spotify AB.' }),
-          h('p', { class: 'muted', text: 'Privacy: the app talks only to Spotify’s official API, and to GitHub to check for updates. Your tokens are encrypted on this computer. No analytics, no tracking.' })
+          h('p', { class: 'muted', text: tr('This project is not affiliated with, endorsed by, or sponsored by Spotify. Spotify is a trademark of Spotify AB.') }),
+          h('p', { class: 'muted', text: tr('Privacy: the app talks only to Spotify’s official API, and to GitHub to check for updates. Your tokens are encrypted on this computer. No analytics, no tracking.') })
         ),
         h('div', { class: 'group-actions links' },
-          h('button', { class: 'btn', type: 'button', text: 'GitHub repository', onclick: () => api.openExternal(REPO_URL) }),
-          h('button', { class: 'btn', type: 'button', text: 'Report a bug / request a feature', onclick: () => api.openExternal(REPO_URL + '/issues') }),
-          h('button', { class: 'btn', type: 'button', text: 'MIT License', onclick: () => api.openExternal(REPO_URL + '/blob/main/LICENSE') })
+          h('button', { class: 'btn', type: 'button', text: tr('GitHub repository'), onclick: () => api.openExternal(REPO_URL) }),
+          h('button', { class: 'btn', type: 'button', text: tr('Report a bug / request a feature'), onclick: () => api.openExternal(REPO_URL + '/issues') }),
+          h('button', { class: 'btn', type: 'button', text: tr('MIT License'), onclick: () => api.openExternal(REPO_URL + '/blob/main/LICENSE') })
         )
       )
     );
     customUpdaters.push(() => {
-      versions.textContent = `Version ${appInfo.version || '?'} · Electron ${appInfo.electron || '?'} · ${appInfo.platform}`;
+      versions.textContent = `${tr('Version {version}', { version: appInfo.version || '?' })} · Electron ${appInfo.electron || '?'} · ${appInfo.platform}`;
     });
   }
 
@@ -631,64 +651,64 @@
     const note = h('p', { class: 'muted' });
 
     body.appendChild(h('section', { class: 'group' },
-      h('div', { class: 'group-title', text: 'App version' }),
+      h('div', { class: 'group-title', text: tr('App version') }),
       h('div', { class: 'info-box' }, versionLine, statusLine, progress, note),
       actions
     ));
     section.groups.forEach((g) => body.appendChild(buildGroup(g)));
 
-    const btn = (text, onclick, primary) => h('button', { class: 'btn' + (primary ? ' btn-primary' : ''), type: 'button', text, onclick });
+    const btn = (text, onclick, primary) => h('button', { class: 'btn' + (primary ? ' btn-primary' : ''), type: 'button', text: tr(text), onclick });
     const check = () => run(() => api.checkForUpdates());
 
     customUpdaters.push(() => {
       const u = updateState;
       const auto = u.mode === 'auto';
-      versionLine.replaceChildren('Installed version: ', h('b', { text: `v${u.currentVersion || appInfo.version}` }));
+      versionLine.replaceChildren(...rich('Installed version: {0}', h('b', { text: `v${u.currentVersion || appInfo.version}` })));
       statusLine.className = u.status === 'error' ? 'error-text' : 'muted';
       progress.hidden = u.status !== 'downloading';
       progress.firstChild.style.width = `${u.percent || 0}%`;
 
-      const when = u.lastChecked ? ` Last checked ${new Date(u.lastChecked).toLocaleTimeString()}.` : '';
+      const when = u.lastChecked ? ' ' + tr('Last checked {time}.', { time: new Date(u.lastChecked).toLocaleTimeString(lang) }) : '';
       const buttons = [];
       switch (u.status) {
         case 'checking':
-          statusLine.textContent = 'Checking for updates…';
-          buttons.push(h('button', { class: 'btn', type: 'button', text: 'Checking…', disabled: true }));
+          statusLine.textContent = tr('Checking for updates…');
+          buttons.push(h('button', { class: 'btn', type: 'button', text: tr('Checking…'), disabled: true }));
           break;
         case 'available':
-          statusLine.textContent = `Version ${u.latestVersion} is available.`;
+          statusLine.textContent = tr('Version {version} is available.', { version: u.latestVersion });
           buttons.push(auto
             ? btn('Download and install', () => run(() => api.downloadUpdate()), true)
             : btn('Open download page', () => api.openExternal(u.releaseUrl), true));
           buttons.push(btn('Release notes', () => api.openExternal(u.releaseUrl)));
           break;
         case 'downloading':
-          statusLine.textContent = `Downloading version ${u.latestVersion}… ${u.percent || 0}%`;
+          statusLine.textContent = tr('Downloading version {version}… {percent}%', { version: u.latestVersion, percent: u.percent || 0 });
           break;
         case 'downloaded':
-          statusLine.textContent = `Version ${u.latestVersion} is ready. Restart the app to finish updating. Your settings and Spotify login are kept.`;
+          statusLine.textContent = tr('Version {version} is ready. Restart the app to finish updating. Your settings and Spotify login are kept.', { version: u.latestVersion });
           buttons.push(btn('Restart and update', () => run(() => api.installUpdate()), true));
           break;
         case 'not-available':
-          statusLine.textContent = 'You have the latest version.' + when;
+          statusLine.textContent = tr('You have the latest version.') + when;
           buttons.push(btn('Check for updates', check, true));
           break;
         case 'error':
-          statusLine.textContent = u.error || 'Could not check for updates.';
+          statusLine.textContent = tr(u.error || 'Could not check for updates.');
           buttons.push(btn('Try again', check, true));
           break;
         default:
-          statusLine.textContent = 'Click the button to see if a newer version is out.' + when;
+          statusLine.textContent = tr('Click the button to see if a newer version is out.') + when;
           buttons.push(btn('Check for updates', check, true));
       }
       buttons.push(btn('All releases', () => api.openExternal(REPO_URL + '/releases')));
       actions.replaceChildren(...buttons);
 
-      note.textContent = auto
+      note.textContent = tr(auto
         ? 'Updates download in the background and install with one click. You never need to run the installer again.'
         : appInfo.packaged
           ? 'This version of the app (macOS, Windows portable or .deb) cannot install updates by itself. When an update is out, download it from the release page and install it over the current one.'
-          : 'You are running from source. Update with "git pull" and "npm install".';
+          : 'You are running from source. Update with "git pull" and "npm install".');
     });
   }
 
@@ -703,7 +723,7 @@
       type: 'button',
       'aria-current': s.id === currentSection ? 'page' : null,
       onclick: () => showSection(s.id)
-    }, svgIcon(s.icon), s.title)));
+    }, svgIcon(s.icon), tr(s.title))));
   }
 
   function showSection(id) {
@@ -711,8 +731,8 @@
     currentSection = section.id;
     try { localStorage.setItem('so.section', currentSection); } catch (_) { /* storage unavailable */ }
     renderNav();
-    document.getElementById('section-title').textContent = section.title;
-    document.getElementById('section-desc').textContent = section.description || '';
+    document.getElementById('section-title').textContent = tr(section.title);
+    document.getElementById('section-desc').textContent = tr(section.description || '');
     const body = document.getElementById('section-body');
     body.replaceChildren();
     bindings = [];
@@ -729,13 +749,29 @@
     const dot = document.getElementById('status-dot');
     const text = document.getElementById('status-text');
     dot.className = 'dot' + (auth.connected ? ' ok' : auth.loggingIn ? ' busy' : '');
-    text.textContent = auth.connected ? `Connected${auth.user && auth.user.name ? ' · ' + auth.user.name : ''}` : auth.loggingIn ? 'Connecting…' : 'Not connected';
-    document.getElementById('toggle-overlay').textContent = overlayVisible ? 'Hide overlay' : 'Show overlay';
+    text.textContent = auth.connected
+      ? tr('Connected') + (auth.user && auth.user.name ? ' · ' + auth.user.name : '')
+      : tr(auth.loggingIn ? 'Connecting…' : 'Not connected');
+    document.getElementById('toggle-overlay').textContent = tr(overlayVisible ? 'Hide overlay' : 'Show overlay');
+  }
+
+  /** Applies the UI language to the static parts of the page. */
+  function applyLanguage() {
+    lang = currentLanguage();
+    document.documentElement.lang = lang;
+    document.title = tr('Spotify Overlay — Settings');
+    document.getElementById('nav').setAttribute('aria-label', tr('Settings sections'));
   }
 
   function onSettings(s) {
     settings = s;
     theme = getEffectiveTheme(s);
+    if (currentLanguage() !== lang) {
+      applyLanguage();
+      showSection(currentSection);
+      updateStatus();
+      return;
+    }
     syncBindings();
   }
 
@@ -766,6 +802,7 @@
     appInfo = info;
     overlayVisible = vis;
     document.getElementById('version').textContent = `v${info.version}`;
+    applyLanguage();
 
     let saved = null;
     try { saved = localStorage.getItem('so.section'); } catch (_) { /* storage unavailable */ }
@@ -780,7 +817,7 @@
       auth = st;
       updateStatus();
       syncBindings();
-      if (!wasConnected && st.connected) toast('Spotify connected!');
+      if (!wasConnected && st.connected) toast(tr('Spotify connected!'));
     });
     api.onObsStatus((st) => { obsStatus = st; syncBindings(); });
     api.onShortcutStatus((st) => { shortcutStatus = st || {}; syncBindings(); });
@@ -788,5 +825,5 @@
     api.onUpdateStatus((st) => { updateState = st; syncBindings(); });
   }
 
-  init().catch((err) => toast('Failed to load settings: ' + errMsg(err), true));
+  init().catch((err) => toast(tr('Failed to load settings: {error}', { error: errMsg(err) }), true));
 })();

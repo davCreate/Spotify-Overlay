@@ -31,6 +31,7 @@ const { ObsServer } = require('./obs-server');
 const { Updater } = require('./updater');
 const { redirectUri } = require('./spotify-auth');
 const { getEffectiveTheme, sanitizeThemeValues } = require('../shared/themes');
+const i18n = require('../shared/i18n');
 
 const IS_DEV = process.argv.includes('--dev');
 const ASSETS = path.join(__dirname, '..', '..', 'assets');
@@ -74,6 +75,12 @@ let pendingSection = null;
 
 function settings() {
   return store.get();
+}
+
+/** Translates English UI text into the language chosen in Settings (see src/shared/i18n.js). */
+function tr(text, vars) {
+  const lang = i18n.resolveLanguage(store ? settings().general.language : 'auto', app.getLocale());
+  return i18n.translate(lang, text, vars);
 }
 
 function isOwnSender(event) {
@@ -247,7 +254,7 @@ function openSettings(section) {
     minWidth: 820,
     minHeight: 560,
     show: false,
-    title: 'Spotify Overlay — Settings',
+    title: tr('Spotify Overlay — Settings'),
     backgroundColor: '#0f0f10',
     icon: appIcon('icon.png'),
     autoHideMenuBar: true,
@@ -282,13 +289,13 @@ function updateTrayMenu() {
   const menu = Menu.buildFromTemplate([
     { label: 'Spotify Overlay', enabled: false },
     { type: 'separator' },
-    { label: overlayVisible ? 'Hide overlay' : 'Show overlay', click: () => setOverlayVisible(!overlayVisible) },
-    { label: s.layout.locked ? 'Unlock position (move overlay)' : 'Lock position (click-through)', click: () => store.set('layout.locked', !s.layout.locked) },
+    { label: tr(overlayVisible ? 'Hide overlay' : 'Show overlay'), click: () => setOverlayVisible(!overlayVisible) },
+    { label: tr(s.layout.locked ? 'Unlock position (move overlay)' : 'Lock position (click-through)'), click: () => store.set('layout.locked', !s.layout.locked) },
     {
-      label: `Size (${Math.round(s.layout.scale * 100)}%)`,
+      label: tr('Size ({percent}%)', { percent: Math.round(s.layout.scale * 100) }),
       submenu: [
-        { label: 'Bigger', click: () => setScale(settings().layout.scale + 0.1) },
-        { label: 'Smaller', click: () => setScale(settings().layout.scale - 0.1) },
+        { label: tr('Bigger'), click: () => setScale(settings().layout.scale + 0.1) },
+        { label: tr('Smaller'), click: () => setScale(settings().layout.scale - 0.1) },
         { type: 'separator' },
         ...[0.75, 1, 1.25, 1.5, 2].map((v) => ({
           label: `${Math.round(v * 100)}%`,
@@ -298,11 +305,11 @@ function updateTrayMenu() {
         }))
       ]
     },
-    { label: 'Settings…', click: () => openSettings() },
+    { label: tr('Settings…'), click: () => openSettings() },
     { type: 'separator' },
     updateMenuItem(),
     { type: 'separator' },
-    { label: 'Quit', click: () => app.quit() }
+    { label: tr('Quit'), click: () => app.quit() }
   ]);
   tray.setContextMenu(menu);
 }
@@ -312,15 +319,15 @@ function updateMenuItem() {
   const openUpdates = () => openSettings('updates');
   switch (st.status) {
     case 'available':
-      return { label: `Update available (v${st.latestVersion})…`, click: openUpdates };
+      return { label: tr('Update available (v{version})…', { version: st.latestVersion }), click: openUpdates };
     case 'downloading':
-      return { label: `Downloading update… ${st.percent}%`, enabled: false };
+      return { label: tr('Downloading update… {percent}%', { percent: st.percent }), enabled: false };
     case 'downloaded':
-      return { label: `Restart to install v${st.latestVersion}`, click: () => updater.install() };
+      return { label: tr('Restart to install v{version}', { version: st.latestVersion }), click: () => updater.install() };
     case 'checking':
-      return { label: 'Checking for updates…', enabled: false };
+      return { label: tr('Checking for updates…'), enabled: false };
     default:
-      return { label: 'Check for updates…', click: () => { openUpdates(); updater.check(); } };
+      return { label: tr('Check for updates…'), click: () => { openUpdates(); updater.check(); } };
   }
 }
 
@@ -408,9 +415,9 @@ function registerIpc() {
   handle('theme:export', async () => {
     const s = settings();
     const { canceled, filePath } = await dialog.showSaveDialog(settingsWin, {
-      title: 'Export theme',
+      title: tr('Export theme'),
       defaultPath: 'my-overlay-theme.json',
-      filters: [{ name: 'Theme JSON', extensions: ['json'] }]
+      filters: [{ name: tr('Theme file'), extensions: ['json'] }]
     });
     if (canceled || !filePath) return false;
     const name = (require('../shared/themes').findTheme(s.themeId, s.customThemes) || {}).name || 'Theme';
@@ -420,21 +427,21 @@ function registerIpc() {
 
   handle('theme:import', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog(settingsWin, {
-      title: 'Import theme',
+      title: tr('Import theme'),
       properties: ['openFile'],
-      filters: [{ name: 'Theme JSON', extensions: ['json'] }]
+      filters: [{ name: tr('Theme file'), extensions: ['json'] }]
     });
     if (canceled || !filePaths[0]) return false;
     const data = JSON.parse(fs.readFileSync(filePaths[0], 'utf8'));
     const values = sanitizeThemeValues(data && data.values);
-    if (!Object.keys(values).length) throw new Error('This file does not contain a valid theme.');
-    store.saveCustomTheme(typeof data.name === 'string' ? data.name : 'Imported theme', values);
+    if (!Object.keys(values).length) throw new Error(tr('This file does not contain a valid theme.'));
+    store.saveCustomTheme(typeof data.name === 'string' ? data.name : tr('Imported theme'), values);
     return true;
   });
 
   handle('settings:export', async () => {
     const { canceled, filePath } = await dialog.showSaveDialog(settingsWin, {
-      title: 'Export settings',
+      title: tr('Export settings'),
       defaultPath: 'spotify-overlay-settings.json',
       filters: [{ name: 'JSON', extensions: ['json'] }]
     });
@@ -448,7 +455,7 @@ function registerIpc() {
 
   handle('settings:import', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog(settingsWin, {
-      title: 'Import settings',
+      title: tr('Import settings'),
       properties: ['openFile'],
       filters: [{ name: 'JSON', extensions: ['json'] }]
     });
@@ -465,7 +472,8 @@ function registerIpc() {
     version: app.getVersion(),
     platform: process.platform,
     electron: process.versions.electron,
-    packaged: app.isPackaged
+    packaged: app.isPackaged,
+    locale: app.getLocale()
   }));
 
   handle('playback:get', () => spotify.lastState);
@@ -476,7 +484,7 @@ function registerIpc() {
     loggingIn = true;
     broadcast('auth', authStatus());
     try {
-      await spotify.login((url) => shell.openExternal(url), settings().account.redirectPort);
+      await spotify.login((url) => shell.openExternal(url), settings().account.redirectPort, tr);
     } catch (err) {
       spotify.lastError = err.message;
     } finally {
@@ -541,8 +549,8 @@ async function init() {
     if (st.status === 'available' && st.latestVersion !== lastNotified && Notification.isSupported()) {
       lastNotified = st.latestVersion;
       const n = new Notification({
-        title: 'Spotify Overlay update available',
-        body: `Version ${st.latestVersion} is ready. Click to update.`,
+        title: tr('Spotify Overlay update available'),
+        body: tr('Version {version} is ready. Click to update.', { version: st.latestVersion }),
         icon: appIcon('icon.png')
       });
       n.on('click', () => openSettings('updates'));
@@ -563,7 +571,8 @@ async function init() {
       applyLock();
       updateTrayMenu();
     }
-    if (touched('layout.scale')) updateTrayMenu();
+    if (touched('layout.scale') || touched('general.language')) updateTrayMenu();
+    if (touched('general.language') && settingsWin && !settingsWin.isDestroyed()) settingsWin.setTitle(tr('Spotify Overlay — Settings'));
     if (touched('shortcuts')) registerShortcuts();
     if (touched('general.launchAtStartup')) applyLoginItem();
     if (touched('obs')) applyObs();

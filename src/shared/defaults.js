@@ -21,6 +21,7 @@
     },
 
     general: {
+      language: 'auto',
       launchAtStartup: false,
       startHidden: false,
       pollInterval: 1000,

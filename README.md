@@ -56,6 +56,9 @@ Free and open source. It works on Windows, macOS and Linux, and also as an OBS b
 **Built for streamers**
 - A built-in **OBS / Streamlabs browser source** at `http://127.0.0.1:4777/` with a transparent background. Changes show up live.
 
+**4 languages**
+- The app is available in English, Spanish, French and Russian. Pick one in Settings → General → Language, or leave it on *Automatic* to follow your system language.
+
 **Private by design**
 - You use **your own** free Spotify developer app (PKCE, no client secret). The app talks only to Spotify's official API, plus GitHub to check for updates (you can turn that off).
 - Tokens are encrypted with your OS keychain (Electron `safeStorage`). There's no analytics, no telemetry and no external server.

@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.0.2] - 2026-11-09
+
+### Added
+- App language option (Settings → General → Language): English, Spanish, French and Russian. *Automatic* follows the system language. The settings window, tray menu, notifications, dialogs, overlay messages and the browser login page are translated.
+- Test that fails when a UI string is missing a translation.
+
 ## [1.0.1] - 2026-11-09
 
 ### Added
@@ -29,5 +35,6 @@ All notable changes to this project are documented here. The format is based on 
 - Built-in update checker (Settings → Updates and the tray menu). The Windows installer and Linux AppImage download and install updates in-app; other builds link to the download page. Automatic checks on launch and every 6 hours, with a notification when a new version is out.
 - Unit tests, a smoke-test mode and a CI workflow that builds installers for Windows, macOS and Linux.
 
+[1.0.2]: https://github.com/davCreate/Spotify-Overlay/releases/tag/v1.0.2
 [1.0.1]: https://github.com/davCreate/Spotify-Overlay/releases/tag/v1.0.1
 [1.0.0]: https://github.com/davCreate/Spotify-Overlay/releases/tag/v1.0.0

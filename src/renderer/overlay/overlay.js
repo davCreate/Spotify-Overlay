@@ -7,6 +7,9 @@
   'use strict';
 
   const { getEffectiveTheme, FONTS, EFFECTS } = window.SO_THEMES;
+  const I18N = window.SO_I18N;
+  /** Translates overlay text into the language chosen in Settings (see src/shared/i18n.js). */
+  const tr = (text, vars) => I18N.translate(I18N.resolveLanguage(settings && settings.general.language, navigator.language), text, vars);
   const { DEFAULT_SETTINGS, clone } = window.SO_DEFAULTS;
 
   /* ---------------------------------------------------------------- API (Electron or web) */
@@ -85,7 +88,7 @@
     type: 'track',
     title: 'Midnight City Lights',
     artists: 'The Overlay Band',
-    album: 'Preview track · nothing is playing',
+    album: 'Preview track · nothing is playing', // translated when shown
     artUrl: null,
     durationMs: 213000
   };
@@ -334,7 +337,9 @@
     // Edit mode
     document.body.classList.toggle('unlocked', isUnlocked());
     const lockKey = prettyAccelerator(s.shortcuts.toggleLock);
-    el.hint.textContent = 'Drag to move · lock it from the tray' + (lockKey ? ` or ${lockKey}` : '');
+    el.hint.textContent = lockKey
+      ? tr('Drag to move · lock it from the tray or {key}', { key: lockKey })
+      : tr('Drag to move · lock it from the tray');
     setVar('--hint-scale', 1 / s.layout.scale);
 
     const fxMargin = (EFFECTS[theme.effect] || EFFECTS.none).margin;
@@ -386,12 +391,12 @@
       return { kind: 'track', track: playback.track, isPlaying: playback.isPlaying, progressMs: playback.progressMs, receivedAt: playback.receivedAt, device: playback.device };
     }
     if (preview) {
-      return { kind: 'track', demo: true, track: DEMO_TRACK, isPlaying: true, progressMs: (Date.now() - DEMO_START) % DEMO_TRACK.durationMs, receivedAt: Date.now(), device: 'Preview' };
+      return { kind: 'track', demo: true, track: DEMO_TRACK, isPlaying: true, progressMs: (Date.now() - DEMO_START) % DEMO_TRACK.durationMs, receivedAt: Date.now(), device: tr('Preview') };
     }
     if (!auth.connected) {
-      return { kind: 'message', title: 'Spotify not connected', subtitle: IS_WEB ? 'Connect your account in the Spotify Overlay app' : 'Open Settings from the tray icon to connect' };
+      return { kind: 'message', title: tr('Spotify not connected'), subtitle: tr(IS_WEB ? 'Connect your account in the Spotify Overlay app' : 'Open Settings from the tray icon to connect') };
     }
-    return { kind: 'message', title: 'Nothing playing', subtitle: 'Start a song in Spotify' };
+    return { kind: 'message', title: tr('Nothing playing'), subtitle: tr('Start a song in Spotify') };
   }
 
   function displayKey(d) {
@@ -434,7 +439,7 @@
     if (d.kind === 'track') {
       setText(el.title, d.track.title);
       setText(el.artist, d.track.artists);
-      setText(el.album, d.track.album);
+      setText(el.album, d.demo ? tr(d.track.album) : d.track.album);
       setText(el.device, d.device || '');
       setArt(d.track.artUrl);
     } else {
