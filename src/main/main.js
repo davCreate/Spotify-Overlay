@@ -27,6 +27,7 @@ const {
 const { SettingsStore } = require('./store');
 const { TokenStore } = require('./token-store');
 const { SpotifyClient } = require('./spotify-client');
+const { WindowsMediaSource } = require('./windows-media');
 const { ObsServer } = require('./obs-server');
 const { Updater } = require('./updater');
 const { redirectUri } = require('./spotify-auth');
@@ -62,6 +63,7 @@ let store;
 let spotify;
 let obs;
 let updater;
+let localMedia = null;
 let overlayWin = null;
 let settingsWin = null;
 let tray = null;
@@ -531,7 +533,11 @@ async function init() {
   const userData = app.getPath('userData');
   store = new SettingsStore(userData);
   const tokenStore = new TokenStore(userData);
+  // Windows: read the Spotify desktop app directly, so the overlay works without Web API calls.
+  // Skipped in smoke tests so screenshots don't depend on what is playing.
+  if (WindowsMediaSource.isSupported() && !SMOKE_DIR) localMedia = new WindowsMediaSource();
   spotify = new SpotifyClient({
+    localSource: localMedia,
     tokenStore,
     getClientId: () => settings().account.clientId,
     getPollInterval: () => settings().general.pollInterval
@@ -588,6 +594,7 @@ async function init() {
   applyLoginItem();
   applyObs();
   spotify.start();
+  if (localMedia) localMedia.start();
   if (!SMOKE_DIR) updater.start();
 
   const s = settings();
@@ -634,6 +641,7 @@ app.on('before-quit', () => {
   if (store) store.saveNow();
   globalShortcut.unregisterAll();
   if (spotify) spotify.stop();
+  if (localMedia) localMedia.stop();
   if (obs) obs.stop();
   if (updater) updater.stop();
 });

@@ -236,6 +236,12 @@ Spotify only reports playback from an active Spotify Connect device. Press play 
 </details>
 
 <details>
+<summary><b>“Rate limited by Spotify, retrying in …”</b></summary>
+
+Spotify limits how often an app may ask what is playing, and a long wait (hours) is tied to your Client ID. On Windows, version 1.0.4+ reads the Spotify desktop app directly, so the overlay keeps working while the desktop app plays, even during a rate limit or without logging in. To clear the limit sooner (for example when listening on another device), create a new app in the Spotify Developer Dashboard and paste its Client ID in Settings → Account. Keep the refresh interval at 3000 ms or more.
+</details>
+
+<details>
 <summary><b>“Your Spotify session expired”</b></summary>
 
 The authorization was revoked or your Client ID changed. Click **Connect Spotify** again.
@@ -289,6 +295,7 @@ src/
 │   ├── main.js          windows, tray, shortcuts, IPC
 │   ├── spotify-auth.js  OAuth 2.0 PKCE login (loopback redirect)
 │   ├── spotify-client.js polling, token refresh, rate-limit handling
+│   ├── windows-media.js  Windows: reads the Spotify desktop app (no Web API calls)
 │   ├── store.js         validated, persisted settings
 │   ├── token-store.js   encrypted token storage
 │   ├── obs-server.js    local browser-source server (SSE)

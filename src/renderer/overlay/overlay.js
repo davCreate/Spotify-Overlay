@@ -137,7 +137,8 @@
   }
 
   function isSafeImageUrl(url) {
-    return typeof url === 'string' && /^https:\/\//i.test(url);
+    // https: from the Spotify Web API; data:image from the Windows desktop-app source.
+    return typeof url === 'string' && (/^https:\/\//i.test(url) || /^data:image\/(png|jpe?g|gif|webp|bmp);base64,[a-z0-9+/=]+$/i.test(url));
   }
 
   function loadImage(url, timeout) {

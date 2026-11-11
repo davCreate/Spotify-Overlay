@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.0.4] - 2026-11-11
+
+### Added
+- Windows: the overlay now reads what is playing straight from the Spotify desktop app (through Windows' media controls), including album art and progress. It makes no Spotify Web API calls while the desktop app plays, so it keeps working during "Rate limited by Spotify" waits and even without connecting an account. The Web API is used only when the desktop app isn't playing (for example when you listen on your phone), and on macOS and Linux.
+
 ## [1.0.3] - 2026-11-11
 
 ### Fixed
@@ -44,6 +49,7 @@ All notable changes to this project are documented here. The format is based on 
 - Built-in update checker (Settings → Updates and the tray menu). The Windows installer and Linux AppImage download and install updates in-app; other builds link to the download page. Automatic checks on launch and every 6 hours, with a notification when a new version is out.
 - Unit tests, a smoke-test mode and a CI workflow that builds installers for Windows, macOS and Linux.
 
+[1.0.4]: https://github.com/davCreate/Spotify-Overlay/releases/tag/v1.0.4
 [1.0.3]: https://github.com/davCreate/Spotify-Overlay/releases/tag/v1.0.3
 [1.0.2]: https://github.com/davCreate/Spotify-Overlay/releases/tag/v1.0.2
 [1.0.1]: https://github.com/davCreate/Spotify-Overlay/releases/tag/v1.0.1

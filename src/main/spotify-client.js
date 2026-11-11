@@ -29,6 +29,32 @@ function formatWait(seconds) {
   return `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m`;
 }
 
+/**
+ * Convert a WindowsMediaSource line into the same shape as normalizePlayback.
+ * `artUrl` is passed in because the source only sends art when the track changes.
+ */
+function normalizeLocal(raw, artUrl) {
+  const key = [raw.title, raw.artist, raw.album].join('|');
+  return {
+    active: true,
+    isPlaying: Boolean(raw.playing),
+    track: {
+      id: 'local:' + key,
+      type: 'track',
+      title: raw.title || 'Unknown',
+      artists: raw.artist || '',
+      album: raw.album || '',
+      artUrl: artUrl || null,
+      durationMs: Number(raw.durationMs) || 0,
+      url: null
+    },
+    progressMs: Number(raw.positionMs) || 0,
+    receivedAt: Date.now(),
+    device: null,
+    source: 'local'
+  };
+}
+
 /** Convert a /me/player response into the shape the overlay understands. */
 function normalizePlayback(body) {
   if (!body || !body.item) {
@@ -62,9 +88,11 @@ function normalizePlayback(body) {
 
 class SpotifyClient extends EventEmitter {
   /**
-   * @param {{tokenStore:any, getClientId:()=>string, getPollInterval:()=>number}} opts
+   * @param {{tokenStore:any, getClientId:()=>string, getPollInterval:()=>number, localSource?:any}} opts
+   *   localSource: optional WindowsMediaSource. While it sees the Spotify desktop app, its data is
+   *   used and the Web API is not polled at all (no rate limits, works without logging in).
    */
-  constructor({ tokenStore, getClientId, getPollInterval }) {
+  constructor({ tokenStore, getClientId, getPollInterval, localSource }) {
     super();
     this.tokenStore = tokenStore;
     this.getClientId = getClientId;
@@ -77,6 +105,49 @@ class SpotifyClient extends EventEmitter {
     this.lastError = null;
     this.lastState = normalizePlayback(null);
     this.backoffUntil = 0;
+    this.localSource = localSource || null;
+    this.localArt = { key: null, url: null };
+    if (this.localSource) this.localSource.on('state', (raw) => this.onLocalState(raw));
+  }
+
+  /** True while the local source currently sees Spotify playing something. */
+  usingLocal() {
+    const raw = this.localSource && this.localSource.current();
+    return Boolean(raw && raw.found && raw.title);
+  }
+
+  onLocalState(raw) {
+    const prev = this.lastState;
+    if (!raw.found || !raw.title) {
+      // Spotify desktop went away (closed, or playing on another device): let the Web API take over.
+      if (prev.source === 'local') {
+        this.lastState = normalizePlayback(null);
+        this.emit('playback', this.lastState);
+        this.pollNow();
+      }
+      return;
+    }
+    const key = [raw.title, raw.artist, raw.album].join('|');
+    if (Object.prototype.hasOwnProperty.call(raw, 'art') || key !== this.localArt.key) {
+      this.localArt = { key, url: raw.art || null };
+    }
+    const next = normalizeLocal(raw, this.localArt.url);
+    // Only push an update when something visible changed; the overlay interpolates progress itself.
+    const expected = prev.isPlaying ? prev.progressMs + (next.receivedAt - prev.receivedAt) : prev.progressMs;
+    const changed = prev.source !== 'local' ||
+      !prev.track || prev.track.id !== next.track.id ||
+      prev.track.artUrl !== next.track.artUrl ||
+      prev.isPlaying !== next.isPlaying ||
+      prev.track.durationMs !== next.track.durationMs ||
+      Math.abs(expected - next.progressMs) > 2000;
+    if (this.lastError) {
+      // The Web API is not needed while the desktop app is visible, so its error no longer applies.
+      this.lastError = null;
+      this.emitStatus();
+    }
+    if (!changed) return;
+    this.lastState = next;
+    this.emit('playback', next);
   }
 
   isConnected() {
@@ -205,6 +276,11 @@ class SpotifyClient extends EventEmitter {
   async tick() {
     if (!this.running) return;
     const interval = this.getPollInterval();
+    if (this.usingLocal()) {
+      // The desktop app is the source; check back later in case it goes away.
+      this.schedule(Math.max(interval, 2000));
+      return;
+    }
     if (!this.isConnected()) {
       this.schedule(Math.max(interval, 2000));
       return;
@@ -251,4 +327,4 @@ class SpotifyClient extends EventEmitter {
   }
 }
 
-module.exports = { SpotifyClient, normalizePlayback, pickImage };
+module.exports = { SpotifyClient, normalizePlayback, normalizeLocal, pickImage };
