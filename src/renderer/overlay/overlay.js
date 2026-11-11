@@ -352,6 +352,7 @@
     const fxMargin = (EFFECTS[theme.effect] || EFFECTS.none).margin;
     margin = clamp(Math.ceil(Math.max(theme.shadow + 12, theme.glow * 1.6, 16) + fxMargin), 16, 150);
     if (isUnlocked()) margin = Math.max(margin, 34);
+    if (document.body.classList.contains('island')) margin = 0;
     setVar('--margin', margin + 'px');
 
     updateArtClasses();
@@ -564,7 +565,7 @@
 
   function petWanted(d) {
     const p = settings.pet;
-    return Boolean(p && p.enabled && d.kind === 'track' && !d.demo && !isUnlocked() && computeVisible(d, Date.now()));
+    return Boolean(p && p.enabled && d.kind === 'track' && !d.demo && !isUnlocked() && settings.layout.placement !== 'island' && computeVisible(d, Date.now()));
   }
 
   function petSleep(run, ms) {

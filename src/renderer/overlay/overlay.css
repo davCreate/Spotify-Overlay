@@ -412,3 +412,15 @@ body.island:not(.island-open) .card .viz-bottom-slot,
 body.island:not(.island-open) .card .edit-hint { display: none !important; }
 body.island:not(.island-open) .card { border-radius: 999px !important; }
 body.island .card { transition: border-radius 260ms ease; }
+
+/* Island look: black, flush with the top edge of the screen, rounded only at the bottom. */
+body.island { background: transparent; }
+body.island #scaler { top: 0; }
+body.island .card {
+  background: #000 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 0 28px 28px !important;
+  color: #fff;
+}
+body.island:not(.island-open) .card { border-radius: 0 0 20px 20px !important; min-width: 170px; }

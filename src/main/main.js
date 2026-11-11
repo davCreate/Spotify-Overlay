@@ -222,6 +222,8 @@ function createOverlay() {
     const [x, y] = overlayWin.getPosition();
     if (expectedPos && expectedPos[0] === x && expectedPos[1] === y) return;
     const layout = settings().layout;
+    // The island never moves: a drag snaps it back. Other anchors switch to free on a drag.
+    if (layout.placement === 'island') { placeOverlay(); return; }
     // Dragged by the user while unlocked: from now on the overlay stays where it was dropped.
     if (layout.placement !== 'free' && !layout.locked && !petStage) store.set('layout.placement', 'free');
     savePos();
@@ -308,8 +310,10 @@ function placeOverlay() {
   if (!anchor) return;
   const [w, h] = overlayWin.getSize();
   const [cx, cy] = overlayWin.getPosition();
-  const a = screen.getDisplayMatching({ x: cx, y: cy, width: w, height: h }).workArea;
-  const m = placement === 'island' ? 8 : 16;
+  const display = screen.getDisplayMatching({ x: cx, y: cy, width: w, height: h });
+  // The island sits flush with the very top of the screen (over the menu bar), like iOS.
+  const a = placement === 'island' ? display.bounds : display.workArea;
+  const m = placement === 'island' ? 0 : 16;
   const x = anchor[0] === 'l' ? a.x + m : anchor[0] === 'r' ? a.x + a.width - w - m : a.x + Math.round((a.width - w) / 2);
   const y = anchor[1] === 't' ? a.y + m : anchor[1] === 'b' ? a.y + a.height - h - m : a.y + Math.round((a.height - h) / 2);
   setOverlayPosition(x, y);

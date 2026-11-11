@@ -376,6 +376,56 @@
           }
           break;
         }
+        case 'peaks': {
+          // Bars with a cap that hangs at the highest recent level and falls slowly.
+          if (!this.peaks || this.peaks.length !== n) this.peaks = new Float32Array(n);
+          for (let i = 0; i < n; i++) {
+            const bh = Math.max(2, v[i] * h);
+            this.peaks[i] = Math.max(v[i], this.peaks[i] - 0.012);
+            if (rainbow) ctx.fillStyle = colorAt(i);
+            const x = i * slot + (slot - barW) / 2;
+            ctx.beginPath();
+            ctx.roundRect(x, h - bh, barW, bh, [Math.min(barW / 2, 3), Math.min(barW / 2, 3), 0, 0]);
+            ctx.fill();
+            ctx.fillRect(x, h - Math.max(2, this.peaks[i] * h) - 3, barW, 2);
+          }
+          break;
+        }
+        case 'orbit': {
+          // Dots circle the center; each dot's distance follows its band.
+          const cx = w / 2;
+          const cy = h / 2;
+          const size = Math.min(w, h);
+          const base = size * 0.2;
+          for (let i = 0; i < n; i++) {
+            const ang = (i / n) * Math.PI * 2 + t * 0.4;
+            const r = base + v[i] * size * 0.22;
+            if (rainbow) ctx.fillStyle = colorAt(i);
+            ctx.beginPath();
+            ctx.arc(cx + Math.cos(ang) * r, cy + Math.sin(ang) * r, 1.2 + v[i] * 2.6, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          break;
+        }
+        case 'pulse': {
+          // Rings expand from the center on every beat of the overall energy.
+          const cx = w / 2;
+          const cy = h / 2;
+          const size = Math.min(w, h);
+          let avg = 0;
+          for (let i = 0; i < n; i++) avg += v[i];
+          avg /= Math.max(1, n);
+          ctx.lineWidth = 2;
+          for (let k = 0; k < 3; k++) {
+            const phase = (t * 0.6 + k / 3) % 1;
+            ctx.globalAlpha = (1 - phase) * (0.25 + avg * 0.75);
+            ctx.beginPath();
+            ctx.arc(cx, cy, size * (0.1 + phase * 0.42), 0, Math.PI * 2);
+            ctx.stroke();
+          }
+          ctx.globalAlpha = 1;
+          break;
+        }
         case 'bars':
         default: {
           for (let i = 0; i < n; i++) {

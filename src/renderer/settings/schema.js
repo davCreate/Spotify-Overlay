@@ -245,7 +245,7 @@
           title: 'Sound wave',
           fields: [
             { key: 'visualizer.enabled', label: 'Show visualizer', type: 'toggle' },
-            { key: 'visualizer.style', label: 'Style', type: 'select', options: opt(['bars', 'Bars'], ['mirror', 'Mirrored bars'], ['blocks', 'LED blocks'], ['dots', 'Dots'], ['wave', 'Wave'], ['line', 'Waveform lines'], ['circle', 'Circle (best as background)']), showIf: (s) => s.visualizer.enabled },
+            { key: 'visualizer.style', label: 'Style', type: 'select', options: opt(['bars', 'Bars'], ['mirror', 'Mirrored bars'], ['blocks', 'LED blocks'], ['dots', 'Dots'], ['wave', 'Wave'], ['line', 'Waveform lines'], ['circle', 'Circle (best as background)'], ['peaks', 'Peaks (falling caps)'], ['orbit', 'Orbit'], ['pulse', 'Pulse rings']), showIf: (s) => s.visualizer.enabled },
             { key: 'visualizer.placement', label: 'Placement', type: 'select', options: opt(['bottom', 'Below the song info'], ['top', 'Above the song info'], ['background', 'Behind everything']), showIf: (s) => s.visualizer.enabled },
             { key: 'visualizer.source', label: 'Audio source', type: 'select', options: opt(['system', 'Real system audio (Windows)'], ['simulated', 'Simulated (no audio capture)']), help: 'Real mode reacts to everything you hear. It needs Windows; other systems automatically use Simulated.', showIf: (s) => s.visualizer.enabled }
           ]

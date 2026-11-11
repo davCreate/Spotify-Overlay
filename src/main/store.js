@@ -59,7 +59,7 @@ const ENUMS = {
   'layout.style': ['horizontal', 'vertical', 'compact', 'minimal'],
   'art.shape': ['square', 'rounded', 'circle', 'vinyl'],
   'text.align': ['left', 'center', 'right'],
-  'visualizer.style': ['bars', 'mirror', 'wave', 'line', 'circle', 'dots', 'blocks'],
+  'visualizer.style': ['bars', 'mirror', 'wave', 'line', 'circle', 'dots', 'blocks', 'peaks', 'orbit', 'pulse'],
   'visualizer.placement': ['bottom', 'background', 'top'],
   'visualizer.source': ['system', 'simulated'],
   'visualizer.colorMode': ['accent', 'gradient', 'rainbow', 'text'],
