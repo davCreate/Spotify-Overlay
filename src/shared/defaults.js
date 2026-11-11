@@ -35,6 +35,7 @@
     },
 
     layout: {
+      placement: 'free',
       style: 'horizontal',
       width: 420,
       scale: 1,

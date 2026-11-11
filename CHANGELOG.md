@@ -8,6 +8,7 @@ All notable changes to this project are documented here. The format is based on 
 - Pet customization in Settings → Pets: body color (Orange, Blue, Green, Purple, Pink, Graphite), accessory (top hat, headphones, bow tie, glasses), idle on or off, and time to linger.
 - Idle behaviour: after the wave the pet stays by the card and looks around, yawns, stretches, taps its feet, hops or waves, never the same thing twice in a row.
 - The pet falls asleep with z notes when the music is paused and wakes with a hop when playback resumes.
+- Overlay position (Settings → Layout → Position): free drag, eight screen anchors (corners, edges and center), and a **dynamic island** pill at the top center that expands on each new song.
 
 ### Changed
 - The pet colors now come from CSS variables, so every palette uses the same pixel model.

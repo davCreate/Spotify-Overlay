@@ -398,3 +398,17 @@ body.unlocked .edit-hint { display: block; }
 .card.fx-sticker { rotate: -2.5deg; }
 .card.fx-sticker::after { border: max(var(--border-w), 5px) solid #fff; }
 .card.fx-sticker:not(.bg-none) { box-shadow: 3px 7px 14px rgba(0, 0, 0, 0.4), 0 0 var(--glow) var(--accent); }
+
+/* ---------------------------------------------------------------- dynamic island (layout.placement = island) */
+
+/* Collapsed: a pill that shows only the title. Opened for a few seconds on each new song. */
+body.island:not(.island-open) .card .art-wrap,
+body.island:not(.island-open) .card .artist,
+body.island:not(.island-open) .card .album,
+body.island:not(.island-open) .card .device,
+body.island:not(.island-open) .card .progress,
+body.island:not(.island-open) .card .viz-top-slot,
+body.island:not(.island-open) .card .viz-bottom-slot,
+body.island:not(.island-open) .card .edit-hint { display: none !important; }
+body.island:not(.island-open) .card { border-radius: 999px !important; }
+body.island .card { transition: border-radius 260ms ease; }

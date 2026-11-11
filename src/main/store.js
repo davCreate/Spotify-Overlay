@@ -65,6 +65,7 @@ const ENUMS = {
   'visualizer.colorMode': ['accent', 'gradient', 'rainbow', 'text'],
   'animation.trackChange': ['none', 'fade', 'slide', 'zoom', 'flip', 'blur'],
   'animation.idle': ['none', 'float', 'breathe'],
+  'layout.placement': ['free', 'top-left', 'top-center', 'top-right', 'middle-left', 'center', 'middle-right', 'bottom-left', 'bottom-center', 'bottom-right', 'island'],
   'pet.type': ['claude'],
   'pet.side': ['auto', 'left', 'right'],
   'pet.color': ['orange', 'blue', 'green', 'purple', 'pink', 'graphite'],

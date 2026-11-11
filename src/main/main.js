@@ -71,6 +71,8 @@ let overlayVisible = true;
 let loggingIn = false;
 let shortcutStatus = {};
 let moveSaveTimer = null;
+/** Last position the app set itself (anchors, pet stage). A move elsewhere is a user drag. */
+let expectedPos = null;
 /** Window bounds saved while a pet animation has stretched the overlay to the screen edge. */
 let petStage = null;
 let pendingSection = null;
@@ -201,6 +203,7 @@ function createOverlay() {
   overlayWin.loadFile(path.join(RENDERER, 'overlay', 'index.html'));
   overlayWin.once('ready-to-show', () => {
     applyLock();
+    placeOverlay();
     overlayVisible = !settings().general.startHidden;
     if (overlayVisible) overlayWin.showInactive();
     updateTrayMenu();
@@ -215,7 +218,15 @@ function createOverlay() {
       store.set('window.y', y);
     }, 400);
   };
-  overlayWin.on('move', savePos);
+  overlayWin.on('move', () => {
+    const [x, y] = overlayWin.getPosition();
+    if (expectedPos && expectedPos[0] === x && expectedPos[1] === y) return;
+    const layout = settings().layout;
+    // Dragged by the user while unlocked: from now on the overlay stays where it was dropped.
+    if (layout.placement !== 'free' && !layout.locked && !petStage) store.set('layout.placement', 'free');
+    savePos();
+  });
+  screen.on('display-metrics-changed', () => placeOverlay());
   overlayWin.on('closed', () => { overlayWin = null; });
   if (IS_DEV) overlayWin.webContents.openDevTools({ mode: 'detach' });
 }
@@ -245,6 +256,7 @@ function stagePet(side) {
     distance: left ? orig.x - x : right - (orig.x + orig.width),
     size: { width: orig.width, height: orig.height }
   };
+  expectedPos = [x, orig.y];
   overlayWin.setBounds({ x, y: orig.y, width: Math.max(orig.width, right - x), height: orig.height });
   return { side: dir, offset: petStage.offset, distance: petStage.distance };
 }
@@ -261,10 +273,46 @@ function unstagePet() {
   if (!overlayWin || overlayWin.isDestroyed()) return;
   const b = overlayWin.getBounds();
   const x = b.x + s.offset;
+  expectedPos = [x, b.y];
   overlayWin.setBounds({ x, y: b.y, width: s.size.width, height: s.size.height });
   store.set('window.x', x);
   store.set('window.y', b.y);
   applyLock();
+}
+
+/* Where the overlay sits for each layout.placement value (x: l/c/r, y: t/m/b). 'island' is top center. */
+const ANCHORS = {
+  'top-left': ['l', 't'],
+  'top-center': ['c', 't'],
+  'top-right': ['r', 't'],
+  'middle-left': ['l', 'm'],
+  center: ['c', 'm'],
+  'middle-right': ['r', 'm'],
+  'bottom-left': ['l', 'b'],
+  'bottom-center': ['c', 'b'],
+  'bottom-right': ['r', 'b'],
+  island: ['c', 't']
+};
+
+function setOverlayPosition(x, y) {
+  if (!overlayWin || overlayWin.isDestroyed()) return;
+  expectedPos = [x, y];
+  overlayWin.setPosition(x, y);
+}
+
+/** Pin the overlay to its anchor on the display it is on. Free placement is left alone. */
+function placeOverlay() {
+  if (!overlayWin || overlayWin.isDestroyed() || petStage) return;
+  const placement = settings().layout.placement;
+  const anchor = ANCHORS[placement];
+  if (!anchor) return;
+  const [w, h] = overlayWin.getSize();
+  const [cx, cy] = overlayWin.getPosition();
+  const a = screen.getDisplayMatching({ x: cx, y: cy, width: w, height: h }).workArea;
+  const m = placement === 'island' ? 8 : 16;
+  const x = anchor[0] === 'l' ? a.x + m : anchor[0] === 'r' ? a.x + a.width - w - m : a.x + Math.round((a.width - w) / 2);
+  const y = anchor[1] === 't' ? a.y + m : anchor[1] === 'b' ? a.y + a.height - h - m : a.y + Math.round((a.height - h) / 2);
+  setOverlayPosition(x, y);
 }
 
 function applyLock() {
@@ -560,7 +608,8 @@ function registerIpc() {
     unstagePet();
     const a = screen.getPrimaryDisplay().workArea;
     const [w] = overlayWin.getSize();
-    overlayWin.setPosition(a.x + a.width - w - 16, a.y + 16);
+    store.set('layout.placement', 'free');
+    setOverlayPosition(a.x + a.width - w - 16, a.y + 16);
   });
   handle('obs:status', () => ({ running: obs.isRunning(), port: settings().obs.port, error: null }));
   handle('shortcuts:status', () => shortcutStatus);
@@ -581,7 +630,10 @@ function registerIpc() {
     }
     const [x, y] = overlayWin.getPosition();
     const [cw, ch] = overlayWin.getSize();
-    if (cw !== width || ch !== height) overlayWin.setBounds({ x, y, width, height });
+    if (cw !== width || ch !== height) {
+      overlayWin.setBounds({ x, y, width, height });
+      placeOverlay();
+    }
   });
 }
 
@@ -632,6 +684,7 @@ async function init() {
     if (!all && keys.every((k) => k.startsWith('window.'))) return;
     broadcast('settings', s);
     const touched = (prefix) => all || keys.some((k) => k === prefix || k.startsWith(prefix + '.'));
+    if (touched('layout.placement')) placeOverlay();
     if (touched('layout.locked')) {
       applyLock();
       updateTrayMenu();

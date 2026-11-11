@@ -133,6 +133,12 @@
       icon: 'M3 3h8v8H3V3zm10 0h8v5h-8V3zM3 13h8v8H3v-8zm10-3h8v11h-8V10z',
       groups: [
         {
+          title: 'Position',
+          fields: [
+            { key: 'layout.placement', label: 'Position on screen', type: 'select', options: opt(['free', 'Free (drag it anywhere)'], ['top-left', 'Top left'], ['top-center', 'Top center'], ['top-right', 'Top right'], ['middle-left', 'Middle left'], ['center', 'Center'], ['middle-right', 'Middle right'], ['bottom-left', 'Bottom left'], ['bottom-center', 'Bottom center'], ['bottom-right', 'Bottom right'], ['island', 'Top center: dynamic island']), help: 'Free: unlock the overlay and drag it anywhere. Any other choice pins it to that spot. Dragging it while unlocked switches back to Free. Dynamic island: a small pill at the top center that expands for a few seconds on each new song, then shrinks back to the title.' }
+          ]
+        },
+        {
           title: 'Size',
           fields: [
             { key: 'layout.scale', label: 'Overall size', type: 'range', min: 0.5, max: 3, step: 0.05, percent: true, help: 'Makes the whole overlay bigger or smaller and keeps its proportions. Also in the tray menu (Size) and with the size shortcuts in Settings → Shortcuts.' }

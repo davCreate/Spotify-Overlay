@@ -270,6 +270,10 @@
     theme = getEffectiveTheme(s);
 
     setVar('--scale', s.layout.scale);
+    // Dynamic island: a pill at the top center that only shows the title until a song starts.
+    const island = s.layout.placement === 'island';
+    document.body.classList.toggle('island', island);
+    if (!island) document.body.classList.remove('island-open');
     setVar('--width', s.layout.width + 'px');
     setVar('--padding', s.layout.padding + 'px');
     setVar('--gap', s.layout.gap + 'px');
@@ -511,6 +515,19 @@
     el.artWrap.classList.toggle('paused', !(d && d.kind === 'track' && d.isPlaying));
   }
 
+  /* Dynamic island: open for a few seconds on each new song, then fold back to the title. */
+  let islandTimer = null;
+  function expandIsland() {
+    if (!document.body.classList.contains('island')) return;
+    clearTimeout(islandTimer);
+    document.body.classList.add('island-open');
+    requestResize();
+    islandTimer = setTimeout(() => {
+      document.body.classList.remove('island-open');
+      requestResize();
+    }, 4500);
+  }
+
   function render() {
     const d = currentDisplay();
     current = d;
@@ -518,6 +535,7 @@
     if (key !== shownKey) {
       transitionTo(d);
       shownKey = key;
+      if (d.kind === 'track') expandIsland();
     } else if (d.kind === 'track') {
       // Same item: keep text fresh (e.g. device switched) without animating.
       if (el.device.firstElementChild.textContent !== (d.device || '')) {
