@@ -8,6 +8,13 @@
 
 Free and open source. It works on Windows, macOS and Linux, and also as an OBS browser source for streamers.
 
+<p>
+  <a href="https://github.com/davCreate/Spotify-Overlay/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/davCreate/Spotify-Overlay?style=for-the-badge&color=1DB954"></a>
+  <a href="LICENSE"><img alt="License MIT" src="https://img.shields.io/badge/license-MIT-blue?style=for-the-badge"></a>
+  <img alt="Platforms" src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-333?style=for-the-badge">
+  <img alt="56 themes" src="https://img.shields.io/badge/themes-56-ff6ad5?style=for-the-badge">
+</p>
+
 [Download](https://github.com/davCreate/Spotify-Overlay/releases) · [Setup guide](#-setup-2-minutes) · [Features](#-features) · [Themes](#-themes) · [FAQ](#-faq--troubleshooting) · [Contributing](CONTRIBUTING.md)
 
 <br>
@@ -149,6 +156,14 @@ When **locked**, the overlay is fully click-through: your mouse clicks go to the
 
 Settings → Themes groups the 56 themes into categories. Click a category chip to show only that category.
 
+<table>
+  <tr>
+    <td align="center"><img src="docs/images/overlay-emerald.png" alt="Emerald Night theme" width="100%"><br><b>Emerald Night</b> · Normal</td>
+    <td align="center"><img src="docs/images/overlay-synthwave.png" alt="Synthwave theme with rainbow visualizer" width="100%"><br><b>Synthwave</b> · Neon &amp; Glow</td>
+    <td align="center"><img src="docs/images/overlay-terminal.png" alt="Retro Terminal theme" width="100%"><br><b>Retro Terminal</b> · Retro</td>
+  </tr>
+</table>
+
 | Category | Themes |
 |---|---|
 | **Normal** | Emerald Night, Nocturne, Arctic Frost, Gold Luxe, Album Adaptive, Espresso |
@@ -168,6 +183,8 @@ Any theme can be tweaked in **Settings → Themes**. Click **Save as new theme**
 ---
 
 ## 🔊 Visualizer: how it works
+
+<img src="docs/images/settings-visualizer.png" alt="Visualizer settings" width="720">
 
 <img src="docs/images/settings-visualizer.png" alt="Visualizer settings" width="720">
 
