@@ -12,6 +12,8 @@ const { EventEmitter } = require('events');
 const auth = require('./spotify-auth');
 
 const API = 'https://api.spotify.com/v1';
+/* Fastest the Web API is polled, whatever the setting says. Faster polling is what gets the app rate limited. */
+const WEB_API_MIN_INTERVAL = 5000;
 
 /** Pick the image closest to (but not smaller than) `target` pixels, else the largest. */
 function pickImage(images, target = 300) {
@@ -275,7 +277,7 @@ class SpotifyClient extends EventEmitter {
 
   async tick() {
     if (!this.running) return;
-    const interval = this.getPollInterval();
+    const interval = Math.max(this.getPollInterval(), WEB_API_MIN_INTERVAL);
     if (this.usingLocal()) {
       // The desktop app is the source; check back later in case it goes away.
       this.schedule(Math.max(interval, 2000));
