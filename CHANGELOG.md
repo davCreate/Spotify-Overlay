@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - 2026-11-11
+
+### Added
+- Dynamic island is clickable: click to play or pause.
+- Synced lyrics from LRCLIB (Settings → Text → Show synced lyrics, off by default). Sends title, artist, album and length to lrclib.net.
+- Progress styles: continuous bar, segments, dots.
+- Album color tone: natural, vivid, soft.
+- History: last 10 songs, with a Settings panel and clear button.
+- Pet speech bubble when it shows the card (toggle in Settings → Pets).
+
+### Changed
+- Playback control needs the user-modify-playback-state scope. Log in again in Settings → Account after updating.
+
 ## [1.1.0] - 2026-11-11
 
 ### Added
