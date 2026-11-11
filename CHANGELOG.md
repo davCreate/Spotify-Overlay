@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
-## [1.0.10] - 2026-11-11
+## [1.1.0] - 2026-11-11
 
 ### Added
 - Dynamic island is now flush with the top edge of the screen, black, rounded at the bottom, and never moves. Dragging snaps it back. The pet is off in island mode.
