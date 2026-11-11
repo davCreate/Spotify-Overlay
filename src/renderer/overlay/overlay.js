@@ -541,6 +541,7 @@
   const PETS = window.SO_PETS;
   const PET_FADE_MS = 240; // card fade while the window is resized after a pet run
   let petRun = null;
+  let petStaged = null; // window stage info while the pet is enabled (see releasePetStage)
   let petSvgFor = null;
 
   function petWanted(d) {
@@ -570,34 +571,34 @@
     el.pet.className = 'pet';
     el.scaler.classList.remove('pet-hiding');
     el.scaler.querySelectorAll('.pet-sparkle, .pet-note').forEach((n) => n.remove());
-    setVar('--stage-offset', '0px');
   }
 
   /*
-   * Leaving the pet animation. Shrinking the window back to the card would shift the card for
-   * a frame (the "blink"). So the card fades out first, the window shrinks while the card is
-   * invisible, then the card fades back in at its real place.
+   * The window stays stretched to the screen edge between pet runs. Shrinking it while the card
+   * is on screen is what made the card blink, so it is only released when the pet is turned off
+   * or the overlay is unlocked (a deliberate action). The card fades out first, the window
+   * shrinks while the card is invisible, then the card fades back in at its real place.
    */
+  function releasePetStage() {
+    if (!petStaged || !api.petUnstage) return;
+    el.scaler.classList.add('pet-hiding');
+    setTimeout(() => {
+      if (petRun) return; // a pet animation started again: keep the stage
+      api.petUnstage().catch(() => {}).then(() => {
+        if (petRun) return;
+        petStaged = null;
+        setVar('--stage-offset', '0px');
+        el.scaler.classList.remove('pet-hiding');
+        requestResize();
+      });
+    }, PET_FADE_MS);
+  }
+
   function finishPet(run) {
     el.pet.hidden = true;
     run.anims.forEach((a) => a.cancel());
     run.timers.forEach(clearTimeout);
-    const staged = run.staged;
-    run.staged = false;
-    if (!staged || !api.petUnstage) {
-      if (!petRun) resetPetDom();
-      requestResize();
-      return;
-    }
-    el.scaler.classList.add('pet-hiding');
-    setTimeout(() => {
-      if (petRun) return; // a new pet animation took over the window
-      api.petUnstage().catch(() => {}).then(() => {
-        if (petRun) return;
-        resetPetDom();
-        requestResize();
-      });
-    }, PET_FADE_MS);
+    if (!petRun) resetPetDom();
   }
 
   function abortPet() {
@@ -658,7 +659,7 @@
    */
   async function petEntrance(d, hadCard) {
     abortPet();
-    const run = { anims: [], timers: [], staged: false };
+    const run = { anims: [], timers: [] };
     petRun = run;
     const alive = () => petRun === run;
     const p = settings.pet;
@@ -673,22 +674,19 @@
     let fromLeft = true;
     let facing = '';
 
-    // Stretch the window to the screen edge; the card stays where it is.
+    // Stretch the window to the screen edge (once; it stays until released); the card stays put.
     const stage = async () => {
-      let s = null;
-      if (api.petStage) {
-        run.staged = true;
-        s = await api.petStage(p.side).catch(() => null);
-        if (!alive()) return;
-        if (!s) run.staged = false;
-      }
+      // Main returns the current stage if there is one (it may have been released elsewhere).
+      let s = api.petStage ? await api.petStage(p.side).catch(() => null) : null;
+      if (!alive()) return;
       if (!s) {
         const r = el.scaler.getBoundingClientRect();
         const side = p.side === 'left' || p.side === 'right' ? p.side : (r.left + r.width / 2 <= window.innerWidth / 2 ? 'left' : 'right');
         s = { side, offset: 0, distance: side === 'left' ? r.left : window.innerWidth - r.right };
       }
+      petStaged = s;
       st = s;
-      setVar('--stage-offset', s.offset + 'px');
+      setVar('--stage-offset', st.offset + 'px');
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
     };
 
@@ -860,6 +858,11 @@
   api.onSettings((s) => {
     const prevUseAlbum = theme.useAlbumColors;
     settings = s;
+    if (!(settings.pet && settings.pet.enabled) || isUnlocked()) {
+      // Pet turned off, or the overlay unlocked for moving: stop the pet and give the window back.
+      abortPet();
+      releasePetStage();
+    }
     applySettings();
     if (theme.useAlbumColors && !prevUseAlbum && currentArtUrl) {
       const url = currentArtUrl;

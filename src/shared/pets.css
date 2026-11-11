@@ -4,16 +4,16 @@
   --pet-size: 1;
   --pet-step: 380ms;
   position: absolute;
-  width: calc(96px * var(--pet-size));
-  aspect-ratio: 80 / 72;
+  width: calc(120px * var(--pet-size));
+  aspect-ratio: 90 / 56;
   pointer-events: none;
 }
 .pet-svg { display: block; width: 100%; height: 100%; overflow: visible; }
 .pet.facing-left .pet-svg { transform: scaleX(-1); }
 
 .pet-arm, .pet-leg, .pet-body, .pet-eye, .pet-spark, .pet-mouth, .pet-shadow, .pet-antenna { transform-box: fill-box; }
-.pet-arm-front { transform-box: view-box; transform-origin: 60px 36.5px; rotate: 28deg; transition: rotate 220ms ease; }
-.pet-arm-back { transform-box: view-box; transform-origin: 18px 36.5px; rotate: -28deg; transition: rotate 220ms ease; }
+.pet-arm-front { transform-box: view-box; transform-origin: 80px 15px; rotate: 28deg; transition: rotate 220ms ease; }
+.pet-arm-back { transform-box: view-box; transform-origin: 10px 15px; rotate: -28deg; transition: rotate 220ms ease; }
 .pet-leg { transform-origin: 50% 0; }
 .pet-eye { transform-origin: 50% 50%; animation: pet-blink 4.2s infinite; }
 .pet-spark { transform-origin: 50% 50%; animation: pet-twinkle 2.4s ease-in-out infinite; }
@@ -37,7 +37,7 @@
 .pet.walking .pet-leg-a { animation: pet-gait var(--pet-step) linear infinite; }
 .pet.walking .pet-leg-b { animation: pet-gait var(--pet-step) linear infinite; animation-delay: calc(var(--pet-step) / -2); }
 .pet.walking .pet-legs { animation: pet-legs-dip calc(var(--pet-step) / 2) ease-in-out infinite; }
-.pet.walking .pet-body { transform-box: view-box; transform-origin: 39px 54px; animation: pet-walk-body var(--pet-step) ease-in-out infinite; }
+.pet.walking .pet-body { transform-box: view-box; transform-origin: 45px 30px; animation: pet-walk-body var(--pet-step) ease-in-out infinite; }
 .pet.walking .pet-antenna { animation: pet-antenna-lag var(--pet-step) ease-in-out infinite; }
 .pet.walking .pet-spark { animation: pet-spark-walk var(--pet-step) ease-in-out infinite; }
 .pet.walking .pet-shadow { animation: pet-walk-shadow calc(var(--pet-step) / 2) ease-in-out infinite; }
@@ -112,7 +112,7 @@
 .pet.walking.backing .pet-leg-a, .pet.walking.backing .pet-leg-b, .pet.walking.backing .pet-arm-back { animation-direction: reverse; }
 
 /* Dancing to the song: body sways, arms swap sides, legs bounce, sparkle spins. */
-.pet.dancing .pet-body { transform-box: view-box; transform-origin: 39px 54px; animation: pet-dance-body 640ms ease-in-out infinite; }
+.pet.dancing .pet-body { transform-box: view-box; transform-origin: 45px 30px; animation: pet-dance-body 640ms ease-in-out infinite; }
 .pet.dancing .pet-arm-front { animation: pet-dance-front 640ms ease-in-out infinite; }
 .pet.dancing .pet-arm-back { animation: pet-dance-back 640ms ease-in-out infinite; }
 .pet.dancing .pet-legs { animation: pet-legs-dip 320ms ease-in-out infinite; }

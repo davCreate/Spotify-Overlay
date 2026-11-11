@@ -227,7 +227,9 @@ function createOverlay() {
  */
 function stagePet(side) {
   if (!overlayWin || overlayWin.isDestroyed()) return null;
-  const orig = petStage ? petStage.orig : overlayWin.getBounds();
+  // Already staged: keep the same window, so the card never moves when a new pet run starts.
+  if (petStage) return { side: petStage.side, offset: petStage.offset, distance: petStage.distance };
+  const orig = overlayWin.getBounds();
   const d = screen.getDisplayMatching(orig).bounds;
   let dir = side === 'left' || side === 'right' ? side : null;
   if (!dir) {
@@ -237,24 +239,36 @@ function stagePet(side) {
   const left = dir === 'left';
   const x = left ? Math.min(d.x, orig.x) : orig.x;
   const right = left ? orig.x + orig.width : Math.max(d.x + d.width, orig.x + orig.width);
-  petStage = { orig };
-  overlayWin.setIgnoreMouseEvents(true, { forward: true });
+  petStage = {
+    side: dir,
+    offset: orig.x - x,
+    distance: left ? orig.x - x : right - (orig.x + orig.width),
+    size: { width: orig.width, height: orig.height }
+  };
   overlayWin.setBounds({ x, y: orig.y, width: Math.max(orig.width, right - x), height: orig.height });
-  return { side: dir, offset: orig.x - x, distance: left ? orig.x - x : right - (orig.x + orig.width) };
+  return { side: dir, offset: petStage.offset, distance: petStage.distance };
 }
 
+/**
+ * Shrink the window back to the card. The renderer must set its content offset to 0 at the same
+ * time (it fades the card out first), so the card never jumps. The new x keeps the card where it
+ * is, even if the window was dragged while staged.
+ */
 function unstagePet() {
   if (!petStage) return;
-  const { orig } = petStage;
+  const s = petStage;
   petStage = null;
   if (!overlayWin || overlayWin.isDestroyed()) return;
-  overlayWin.setBounds(orig);
+  const b = overlayWin.getBounds();
+  const x = b.x + s.offset;
+  overlayWin.setBounds({ x, y: b.y, width: s.size.width, height: s.size.height });
+  store.set('window.x', x);
+  store.set('window.y', b.y);
   applyLock();
 }
 
 function applyLock() {
   if (!overlayWin || overlayWin.isDestroyed()) return;
-  if (petStage) return; // re-applied when the pet animation ends
   const locked = settings().layout.locked;
   // Locked = fully click-through so it never blocks games or apps underneath.
   overlayWin.setIgnoreMouseEvents(locked, locked ? { forward: true } : undefined);
@@ -328,6 +342,7 @@ function updateTrayMenu() {
     { type: 'separator' },
     { label: tr(overlayVisible ? 'Hide overlay' : 'Show overlay'), click: () => setOverlayVisible(!overlayVisible) },
     { label: tr(s.layout.locked ? 'Unlock position (move overlay)' : 'Lock position (click-through)'), click: () => store.set('layout.locked', !s.layout.locked) },
+    { label: tr('Pet'), type: 'checkbox', checked: Boolean(s.pet && s.pet.enabled), click: () => store.set('pet.enabled', !(settings().pet && settings().pet.enabled)) },
     {
       label: tr('Size ({percent}%)', { percent: Math.round(s.layout.scale * 100) }),
       submenu: [
@@ -557,9 +572,13 @@ function registerIpc() {
   // Fire-and-forget: overlay reports its content size so the window hugs the card.
   ipcMain.on('overlay:resize', (event, size) => {
     if (!overlayWin || event.sender !== overlayWin.webContents || !size) return;
-    if (petStage) return; // the renderer re-sends its size after the pet animation
     const width = Math.round(Math.min(2400, Math.max(40, Number(size.width) || 0)));
     const height = Math.round(Math.min(2400, Math.max(40, Number(size.height) || 0)));
+    if (petStage) {
+      // Window is stretched for the pet: remember the card size for when it is released.
+      petStage.size = { width, height };
+      return;
+    }
     const [x, y] = overlayWin.getPosition();
     const [cw, ch] = overlayWin.getSize();
     if (cw !== width || ch !== height) overlayWin.setBounds({ x, y, width, height });
