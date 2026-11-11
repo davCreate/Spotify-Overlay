@@ -47,6 +47,8 @@ const NUMBER_LIMITS = {
   'visualizer.opacity': [0.05, 1],
   'visualizer.fps': [15, 144],
   'animation.duration': [0, 3000],
+  'pet.size': [0.5, 2],
+  'pet.speed': [0.5, 2.5],
   'obs.port': [1024, 65535]
 };
 
@@ -61,7 +63,9 @@ const ENUMS = {
   'visualizer.source': ['system', 'simulated'],
   'visualizer.colorMode': ['accent', 'gradient', 'rainbow', 'text'],
   'animation.trackChange': ['none', 'fade', 'slide', 'zoom', 'flip', 'blur'],
-  'animation.idle': ['none', 'float', 'breathe']
+  'animation.idle': ['none', 'float', 'breathe'],
+  'pet.type': ['claude'],
+  'pet.side': ['auto', 'left', 'right']
 };
 
 class SettingsStore extends EventEmitter {

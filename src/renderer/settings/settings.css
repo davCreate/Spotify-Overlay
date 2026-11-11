@@ -225,3 +225,59 @@ input[type='color'] { width: 40px; height: 32px; border: 1px solid var(--line); 
 .theme-card:hover .pfx-shimmer .theme-preview::after { animation: p-shimmer 2.5s ease-in-out infinite; }
 @keyframes p-holo { from { background-position: 0% 50%; } to { background-position: 100% 50%; } }
 @keyframes p-shimmer { from { background-position: 150% 0; } to { background-position: -50% 0; } }
+
+/* Previews of the animated 3D effects (they animate while hovered). */
+.pfx-orbit .theme-preview { rotate: 0.12 1 0 -20deg; box-shadow: 12px 10px 14px rgba(0, 0, 0, 0.5); }
+.theme-card:hover .pfx-orbit .theme-preview { animation: p-orbit 3s ease-in-out infinite; }
+@keyframes p-orbit { 0%, 100% { rotate: 0.12 1 0 -20deg; } 50% { rotate: 0.12 1 0 20deg; } }
+.pfx-hover3d .theme-preview { rotate: 1 0.5 0 10deg; translate: 0 -4px; box-shadow: 0 16px 10px -8px rgba(0, 0, 0, 0.6); }
+.theme-card:hover .pfx-hover3d .theme-preview { animation: p-hover 3s ease-in-out infinite; }
+@keyframes p-hover { 0%, 100% { rotate: 1 0.5 0 10deg; translate: 0 -4px; } 50% { rotate: -1 0.4 0 9deg; translate: 0 -9px; } }
+.pfx-cube .theme-frame, .pfx-cube { perspective: 420px; }
+.pfx-cube .theme-preview { border-radius: 6px; rotate: 0.5 -1 0 22deg; box-shadow: -1px 1px 0 var(--d), -2px 2px 0 var(--d), -3px 3px 0 var(--d), -4px 4px 0 var(--d), -5px 5px 0 var(--d), -6px 6px 0 var(--d), -7px 7px 0 var(--d), -10px 14px 12px rgba(0, 0, 0, 0.5); --d: color-mix(in srgb, var(--p-bg) 50%, #000); }
+.theme-card:hover .pfx-cube .theme-preview { animation: p-cube 4s ease-in-out infinite; }
+@keyframes p-cube { 0%, 100% { rotate: 0.5 -1 0 22deg; } 50% { rotate: 0.5 -1 0 8deg; } }
+.pfx-parallax .theme-preview { rotate: 1 -1 0 12deg; box-shadow: 0 12px 14px rgba(0, 0, 0, 0.5); }
+.pfx-parallax .p-art { box-shadow: 4px 8px 8px rgba(0, 0, 0, 0.5); translate: -3px -3px; }
+.theme-card:hover .pfx-parallax .theme-preview { animation: p-parallax 4s ease-in-out infinite; }
+@keyframes p-parallax { 0%, 100% { rotate: 1 -1 0 12deg; } 50% { rotate: -1 1 0 12deg; } }
+.pfx-hologram .theme-preview { rotate: 1 0 0 18deg; outline: 1px solid var(--p-accent); box-shadow: 0 0 16px color-mix(in srgb, var(--p-accent) 60%, transparent), 0 18px 0 -12px color-mix(in srgb, var(--p-accent) 70%, transparent); }
+.pfx-hologram .theme-preview::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, color-mix(in srgb, var(--p-accent) 30%, transparent) 0 1px, transparent 1px 4px); }
+.theme-card:hover .pfx-hologram .theme-preview { animation: p-flicker 1.6s steps(1) infinite; }
+@keyframes p-flicker { 0%, 100% { opacity: 1; } 30% { opacity: 0.6; } 33% { opacity: 1; } 70% { opacity: 0.75; } 72% { opacity: 1; } }
+.pfx-beat3d .theme-preview { box-shadow: 0 0 0 2px var(--p-accent), 0 0 18px var(--p-accent); }
+.theme-card:hover .pfx-beat3d .theme-preview { animation: p-beat 0.5s ease-out infinite; }
+@keyframes p-beat { 0% { scale: 1.06; } 100% { scale: 1; } }
+.pfx-swing { padding-top: 26px; }
+.pfx-swing .theme-preview { overflow: visible; transform-origin: 50% -20px; rotate: 0 0 1 -3deg; box-shadow: 0 10px 12px rgba(0, 0, 0, 0.45); }
+.pfx-swing .theme-preview::before { content: ''; position: absolute; left: 30%; right: 30%; top: -20px; height: 20px; border: 2px solid #b9a77a; border-bottom: 0; border-radius: 50% 50% 0 0 / 100% 100% 0 0; }
+.theme-card:hover .pfx-swing .theme-preview { animation: p-swing 2s ease-in-out infinite; }
+@keyframes p-swing { 0%, 100% { rotate: 0 0 1 -4deg; } 50% { rotate: 0 0 1 4deg; } }
+
+/* ---------------------------------------------------------------- pets */
+
+.pet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; padding: 16px; }
+.pet-card {
+  position: relative; border: 2px solid transparent; border-radius: 12px; background: var(--panel-2); padding: 0;
+  cursor: pointer; text-align: left; overflow: hidden; color: inherit; font: inherit;
+}
+.pet-card:hover { border-color: #3d3d46; }
+.pet-card.active { border-color: var(--accent); }
+.pet-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.pet-stage {
+  position: relative; height: 130px; overflow: hidden;
+  background: linear-gradient(180deg, #2a2a31, #17171b 72%, #101013 72%);
+}
+.pet-stage .pet { left: 50%; bottom: 12px; margin-left: -48px; }
+.pet-stage .mini-card {
+  position: absolute; bottom: 30px; left: calc(50% + 34px); width: 72px; height: 36px; border-radius: 6px;
+  background: linear-gradient(135deg, #1ed760, #127a39); box-shadow: 0 6px 10px rgba(0, 0, 0, 0.45);
+}
+.pet-stage .mini-card::before { content: ''; position: absolute; left: 6px; top: 6px; width: 24px; height: 24px; border-radius: 4px; background: rgba(255, 255, 255, 0.85); }
+.pet-stage .mini-card::after { content: ''; position: absolute; left: 36px; top: 10px; width: 28px; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, 0.85); box-shadow: 0 9px 0 -1px rgba(255, 255, 255, 0.55); }
+.pet-card:hover .pet-stage .pet { animation: pet-preview-hop 1.4s ease-in-out infinite; }
+@keyframes pet-preview-hop { 0%, 100% { translate: 0 0; } 50% { translate: 0 -3px; } }
+.pet-meta { padding: 8px 10px 10px; }
+.pet-name { font-weight: 600; font-size: 13px; }
+.pet-desc { color: var(--muted); font-size: 11.5px; margin-top: 2px; line-height: 1.35; }
+.pet-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 0 16px 16px; }

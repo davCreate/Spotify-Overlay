@@ -98,6 +98,14 @@
       idle: 'none'
     },
 
+    pet: {
+      enabled: false,
+      type: 'claude',
+      side: 'auto',
+      size: 1,
+      speed: 1
+    },
+
     shortcuts: {
       toggleOverlay: 'CommandOrControl+Shift+O',
       toggleLock: 'CommandOrControl+Shift+L',

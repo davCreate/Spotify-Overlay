@@ -58,7 +58,7 @@ Every key in `values` is optional. Missing keys take the default value, and inva
 | `shadow` | number | 0–80 | Drop-shadow blur (px) |
 | `glow` | number | 0–60 | Accent glow around the card (px) |
 | `font` | string | `system`, `rounded`, `condensed`, `serif`, `mono`, `display` | Font family (system fonts only, so it works offline) |
-| `effect` | string | `none`, `tilt`, `extrude`, `layered`, `neumorph`, `neon`, `holo`, `aurora`, `shimmer`, `scanlines`, `pixel`, `sticker` | Visual effect (3D, glow, animated or retro) |
+| `effect` | string | `none`, `tilt`, `extrude`, `layered`, `neumorph`, `neon`, `holo`, `aurora`, `shimmer`, `scanlines`, `pixel`, `sticker`, `orbit`, `hover3d`, `cube`, `parallax`, `hologram`, `beat3d`, `swing` | Visual effect (3D, glow, animated or retro) |
 
 ## Contributing a built-in theme
 

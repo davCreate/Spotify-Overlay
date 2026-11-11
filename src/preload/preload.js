@@ -45,6 +45,9 @@ contextBridge.exposeInMainWorld('overlayAPI', {
   setOverlayVisible: invoke('overlay:visible-set'),
   resetOverlayPosition: invoke('overlay:reset-position'),
   resizeOverlay: (width, height) => ipcRenderer.send('overlay:resize', { width, height }),
+  petStage: invoke('overlay:pet-stage'),
+  petUnstage: invoke('overlay:pet-unstage'),
+  playPet: invoke('pet:play'),
 
   getObsStatus: invoke('obs:status'),
   getShortcutStatus: invoke('shortcuts:status'),
@@ -63,6 +66,7 @@ contextBridge.exposeInMainWorld('overlayAPI', {
   onPlayback: on('playback'),
   onAuth: on('auth'),
   onPreview: on('preview'),
+  onPetPlay: on('pet-play'),
   onObsStatus: on('obs-status'),
   onShortcutStatus: on('shortcuts-status'),
   onOverlayVisible: on('overlay-visible')

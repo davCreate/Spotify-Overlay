@@ -64,6 +64,24 @@
       ]
     },
     {
+      id: 'pets',
+      title: 'Pets',
+      icon: 'M8.5 3a2.2 2.6 0 1 1 0 5.2 2.2 2.6 0 0 1 0-5.2zm7 0a2.2 2.6 0 1 1 0 5.2 2.2 2.6 0 0 1 0-5.2zM4 8.6a2 2.4 0 1 1 0 4.8 2 2.4 0 0 1 0-4.8zm16 0a2 2.4 0 1 1 0 4.8 2 2.4 0 0 1 0-4.8zM12 11c2.6 0 6 3.8 6 6.6 0 1.9-1.4 2.9-3.2 2.9-1.2 0-1.8-.6-2.8-.6s-1.6.6-2.8.6C7.4 20.5 6 19.5 6 17.6 6 14.8 9.4 11 12 11z',
+      description: 'A little pet brings the overlay onto your screen with every new song.',
+      custom: 'pets',
+      groups: [
+        {
+          title: 'Behavior',
+          fields: [
+            { key: 'pet.enabled', label: 'Pet brings every new song', type: 'toggle', help: 'The pet walks in from the edge of the screen carrying the overlay, shows it off, puts it in its place and walks away.' },
+            { key: 'pet.side', label: 'Comes in from', type: 'select', options: opt(['auto', 'Nearest screen edge'], ['left', 'Left edge'], ['right', 'Right edge']) },
+            { key: 'pet.size', label: 'Pet size', type: 'range', min: 0.5, max: 2, step: 0.05, percent: true },
+            { key: 'pet.speed', label: 'Walking speed', type: 'range', min: 0.5, max: 2.5, step: 0.1, unit: '×' }
+          ]
+        }
+      ]
+    },
+    {
       id: 'general',
       title: 'General',
       icon: 'M19.4 13a7.7 7.7 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.3 7.3 0 0 0-1.7-1L15 3h-4l-.3 2.9a7.3 7.3 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.7 7.7 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1c.5.4 1.1.7 1.7 1L11 21h4l.3-2.9c.6-.3 1.2-.6 1.7-1l2.5 1 2-3.5zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z',

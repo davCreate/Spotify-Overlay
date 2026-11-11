@@ -4,7 +4,7 @@
 
 # Spotify Overlay
 
-**A highly customizable, always-on-top “now playing” overlay for Spotify, with album art, live progress, audio visualizers and 42 built-in themes.**
+**A highly customizable, always-on-top “now playing” overlay for Spotify, with album art, live progress, audio visualizers and 56 built-in themes, and a pet that brings it on screen.**
 
 Free and open source. It works on Windows, macOS and Linux, and also as an OBS browser source for streamers.
 
@@ -35,9 +35,12 @@ Free and open source. It works on Windows, macOS and Linux, and also as an OBS b
 - A **simulated** mode for macOS, Linux and OBS. It only animates while music is playing.
 - Placement below or above the song info, or behind everything. Colors can follow the accent, a gradient, a rainbow or the text color. Glow, sensitivity, smoothing, band count, height, opacity and FPS limit are all adjustable.
 
-**42 themes in 9 categories + a full theme editor**
+**56 themes in 9 categories + a full theme editor**
 - Categories: Normal, Minimal, **3D**, Glass, Neon & Glow, **Animated**, Retro, Colorful & Nature and Streaming. Each theme card shows its background, effect and font.
-- **12 visual effects**: 3D tilt, 3D extruded block, 3D stacked cards, soft 3D (neumorphism), neon tube, holographic foil, aurora, shimmer, CRT scanlines, pixel/8-bit and sticker. Any effect can be combined with any colors.
+- **19 visual effects**: 3D tilt, 3D extruded block, 3D stacked cards, soft 3D (neumorphism), neon tube, holographic foil, aurora, shimmer, CRT scanlines, pixel/8-bit, sticker, and seven animated 3D effects: **3D orbit**, **3D hover**, **3D box** (real top, bottom and side faces), **3D parallax** (cover and text at different depths), **hologram projector**, **beat pulse 3D** (jumps toward you on the beat) and **hanging sign**. Any effect can be combined with any colors.
+
+**Pets**
+- Turn on a pet in Settings → Pets and it delivers every new song: it walks in from the edge of the screen carrying the overlay, shows it off with sparkles, puts it in its place, waves and walks away. The first pet is **Claude**, a little orange helper. You can pick the edge it comes from, its size and walking speed, and play the animation from Settings. It also works in the OBS browser source.
 - Background styles: solid, gradient, glass, **blurred album art**, or fully transparent.
 - **Album-adaptive colors**: accent colors are extracted from each cover.
 - Edit every color, border, shadow, glow, font and effect. Save your own themes, and export or import them as JSON to share.
@@ -143,13 +146,13 @@ When **locked**, the overlay is fully click-through: your mouse clicks go to the
 
 ## 🎨 Themes
 
-Settings → Themes groups the 42 themes into categories. Click a category chip to show only that category.
+Settings → Themes groups the 56 themes into categories. Click a category chip to show only that category.
 
 | Category | Themes |
 |---|---|
 | **Normal** | Emerald Night, Nocturne, Arctic Frost, Gold Luxe, Album Adaptive, Espresso |
 | **Minimal** | Minimal Light, Minimal Dark, Monochrome |
-| **3D** | Tilted Stage (3D tilt), Solid Block and Isometric (extruded), Card Deck (stacked cards), Soft Clay and Soft Night (neumorphism) |
+| **3D** | Tilted Stage (3D tilt), Solid Block and Isometric (extruded), Card Deck (stacked cards), Soft Clay and Soft Night (neumorphism), Sapphire Orbit and Golden Turntable (3D orbit), Hover Mint and Cloud Nine (3D hover), Neon Cube, Toy Block and Obsidian Box (3D box), Depth Field and Paper Layers (3D parallax), Hologram and Mars Projection (hologram projector), Bass Drop and Heartbeat (beat pulse 3D), Cafe Sign (hanging sign) |
 | **Glass** | Midnight Glass, Frosted Ice, Smoked Glass, Rose Glass |
 | **Neon & Glow** | Synthwave, Cyberpunk, Neon Tokyo, Toxic, Electric Blue |
 | **Animated** | Aurora, Holographic, Lava Lamp, Liquid Gold |
@@ -194,7 +197,7 @@ The server listens on `127.0.0.1` only, so other devices on your network cannot 
 | Section | Options |
 |---|---|
 | **Account** | Client ID, redirect port, connect/disconnect |
-| **Themes** | 42 presets in 9 categories, custom themes, import/export; visual effect, background style, colors ×6, album-adaptive colors, gradient angle, background opacity, album blur, border width/color, shadow, glow, font |
+| **Themes** | 56 presets in 9 categories, custom themes, import/export; visual effect, background style, colors ×6, album-adaptive colors, gradient angle, background opacity, album blur, border width/color, shadow, glow, font |
 | **General** | Launch at startup, start hidden, refresh interval (0.5–10 s), hide when idle, hide when paused (+ delay), auto-hide (+ duration), demo track while Settings is open |
 | **Layout** | Overall size (50–300%, proportional) with quick size buttons, horizontal / vertical / compact / minimal, width, padding, spacing, corner radius, opacity, lock position, reset position |
 | **Album art** | Show, size, shape (square/rounded/circle/vinyl), spin, beat pulse, shadow |

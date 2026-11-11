@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.0.5] - 2026-11-11
+
+### Added
+- 14 new 3D themes with animation: Sapphire Orbit, Golden Turntable, Hover Mint, Cloud Nine, Neon Cube, Toy Block, Obsidian Box, Depth Field, Paper Layers, Hologram, Mars Projection, Bass Drop, Heartbeat and Cafe Sign (56 themes in total).
+- 7 new animated 3D effects, usable with any colors: 3D orbit (turns under a moving light), 3D hover (floats above its shadow), 3D box (a real box with top, bottom and side faces), 3D parallax (cover and text at different depths), hologram projector, beat pulse 3D (jumps toward you on the beat) and hanging sign.
+- New **Pets** section. Turn on a pet and it delivers every new song: it walks in from the edge of the screen carrying the overlay, shows it off, puts it in its place, waves and walks away. The first pet is Claude. You can choose the edge it comes from, its size and its walking speed, and play the animation from Settings. It also works in the OBS browser source.
+
 ## [1.0.4] - 2026-11-11
 
 ### Added
@@ -49,6 +56,7 @@ All notable changes to this project are documented here. The format is based on 
 - Built-in update checker (Settings → Updates and the tray menu). The Windows installer and Linux AppImage download and install updates in-app; other builds link to the download page. Automatic checks on launch and every 6 hours, with a notification when a new version is out.
 - Unit tests, a smoke-test mode and a CI workflow that builds installers for Windows, macOS and Linux.
 
+[1.0.5]: https://github.com/davCreate/Spotify-Overlay/releases/tag/v1.0.5
 [1.0.4]: https://github.com/davCreate/Spotify-Overlay/releases/tag/v1.0.4
 [1.0.3]: https://github.com/davCreate/Spotify-Overlay/releases/tag/v1.0.3
 [1.0.2]: https://github.com/davCreate/Spotify-Overlay/releases/tag/v1.0.2

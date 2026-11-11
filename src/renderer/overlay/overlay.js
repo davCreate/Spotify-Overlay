@@ -62,6 +62,8 @@
   const el = {
     root: document.documentElement,
     scaler: $('#scaler'),
+    carry: $('#carry'),
+    pet: $('#pet'),
     card: $('#card'),
     content: $('.content'),
     artWrap: $('.art-wrap'),
@@ -475,6 +477,12 @@
   };
 
   async function transitionTo(d) {
+    if (petWanted(d)) {
+      ++transitionToken;
+      petEntrance(d);
+      return;
+    }
+    abortPet();
     const token = ++transitionToken;
     const type = settings.animation.trackChange;
     const duration = settings.animation.duration;
@@ -521,6 +529,199 @@
     tick();
   }
 
+  /* ---------------------------------------------------------------- pet entrance */
+
+  /*
+   * With a pet enabled, every new song is delivered by the pet: it walks in from the screen
+   * edge carrying the card, lifts it up to show it, sets it down in place, hops, waves and
+   * walks back out. In the app the overlay window is stretched to the screen edge for the
+   * duration (main.js stagePet); in OBS the pet walks in from the edge of the browser source.
+   */
+  const PETS = window.SO_PETS;
+  let petRun = null;
+  let petSvgFor = null;
+
+  function petWanted(d) {
+    const p = settings.pet;
+    return Boolean(p && p.enabled && d.kind === 'track' && !d.demo && !isUnlocked() && computeVisible(d, Date.now()));
+  }
+
+  function petSleep(run, ms) {
+    return new Promise((resolve) => run.timers.push(setTimeout(resolve, ms)));
+  }
+
+  function petAnimate(run, node, frames, opts) {
+    const a = node.animate(frames, opts);
+    run.anims.push(a);
+    return a;
+  }
+
+  function ensurePetSvg() {
+    const type = settings.pet.type;
+    if (petSvgFor === type) return;
+    el.pet.innerHTML = PETS.findPet(type).svg();
+    petSvgFor = type;
+  }
+
+  function resetPetDom() {
+    el.pet.hidden = true;
+    el.pet.className = 'pet';
+    el.scaler.classList.remove('pet-hiding');
+    el.scaler.querySelectorAll('.pet-sparkle').forEach((n) => n.remove());
+    setVar('--stage-offset', '0px');
+  }
+
+  function finishPet(run) {
+    el.pet.hidden = true;
+    run.anims.forEach((a) => a.cancel());
+    run.timers.forEach(clearTimeout);
+    const staged = run.staged;
+    run.staged = false;
+    if (staged && api.petUnstage) {
+      // Shrink the window back first, then drop the content offset right after.
+      api.petUnstage().catch(() => {}).then(() => {
+        if (!petRun) resetPetDom();
+        requestResize();
+      });
+    } else {
+      if (!petRun) resetPetDom();
+      requestResize();
+    }
+  }
+
+  function abortPet() {
+    if (!petRun) return;
+    const run = petRun;
+    petRun = null;
+    finishPet(run);
+  }
+
+  function petSparkles(run) {
+    const w = el.card.offsetWidth;
+    const h = el.card.offsetHeight;
+    const c = activeColors();
+    const colors = [c.accent, c.accent2, '#ffd9a8', '#ffffff'];
+    for (let i = 0; i < 14; i++) {
+      const sp = document.createElement('div');
+      sp.className = 'pet-sparkle';
+      const ang = (i / 14) * Math.PI * 2 + Math.random() * 0.4;
+      sp.style.left = (w / 2 + Math.cos(ang) * w * 0.42 - 7) + 'px';
+      sp.style.top = (h / 2 + Math.sin(ang) * h * 0.42 - 7) + 'px';
+      sp.style.setProperty('--spark', colors[i % colors.length]);
+      el.scaler.appendChild(sp);
+      const dx = Math.cos(ang) * (28 + Math.random() * 26);
+      const dy = Math.sin(ang) * (22 + Math.random() * 20);
+      const a = petAnimate(run, sp, [
+        { translate: '0px 0px', scale: 0.2, opacity: 0, rotate: '0deg' },
+        { translate: (dx * 0.6) + 'px ' + (dy * 0.6) + 'px', scale: 1.1, opacity: 1, offset: 0.35 },
+        { translate: dx + 'px ' + dy + 'px', scale: 0.4, opacity: 0, rotate: '160deg' }
+      ], { duration: 900 + Math.random() * 300, delay: Math.random() * 160, easing: 'ease-out', fill: 'forwards' });
+      a.finished.then(() => sp.remove(), () => sp.remove());
+    }
+  }
+
+  async function petEntrance(d) {
+    abortPet();
+    const run = { anims: [], timers: [], staged: false };
+    petRun = run;
+    const alive = () => petRun === run;
+    const p = settings.pet;
+    const pet = PETS.findPet(p.type);
+    const scale = settings.layout.scale;
+
+    // Hide the card, put the new song on it and wait for the cover.
+    el.content.getAnimations().forEach((a) => a.cancel());
+    el.scaler.classList.add('pet-hiding');
+    fillContent(d);
+    const url = d.kind === 'track' && isSafeImageUrl(d.track.artUrl) ? d.track.artUrl : null;
+    if (url) await loadImage(url, 1500);
+    if (!alive()) return;
+
+    // Make room up to the screen edge.
+    let stage = null;
+    if (api.petStage) {
+      run.staged = true;
+      stage = await api.petStage(p.side).catch(() => null);
+      if (!alive()) return;
+      if (!stage) run.staged = false;
+    }
+    if (!stage) {
+      const r = el.scaler.getBoundingClientRect();
+      const side = p.side === 'left' || p.side === 'right' ? p.side : (r.left + r.width / 2 <= window.innerWidth / 2 ? 'left' : 'right');
+      stage = { side, offset: 0, distance: side === 'left' ? r.left : window.innerWidth - r.right };
+    }
+    setVar('--stage-offset', stage.offset + 'px');
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    if (!alive()) return;
+
+    // Place the pet beside the card, on the side it comes from, holding the card's edge.
+    ensurePetSvg();
+    const fromLeft = stage.side === 'left';
+    const facing = fromLeft ? '' : ' facing-left';
+    el.pet.style.setProperty('--pet-size', p.size);
+    el.pet.style.translate = '';
+    el.pet.hidden = false;
+    el.pet.className = 'pet';
+    const petW = el.pet.offsetWidth;
+    const petH = el.pet.offsetHeight;
+    const cardW = el.card.offsetWidth;
+    const cardH = el.card.offsetHeight;
+    const reach = pet.armReach;
+    el.pet.style.left = (fromLeft ? -petW * reach : cardW - petW * (1 - reach)) + 'px';
+    el.pet.style.top = (cardH - petH) + 'px';
+
+    // Walk in from off screen (window pixels: #scaler's translate is applied before its scale).
+    const cardLeft = margin + stage.offset;
+    const startX = fromLeft
+      ? -(cardLeft + cardW * scale + 12)
+      : window.innerWidth - cardLeft + petW * scale * (1 - reach) + 12;
+    const speed = p.speed || 1;
+    const dur = clamp(Math.abs(startX) / (330 * speed), 0.9, 4.2) * 1000;
+    const stride = petW * scale * 0.8;
+    const stepFor = (px, ms) => clamp(stride / (px / ms), 150, 420).toFixed(0) + 'ms';
+    el.pet.style.setProperty('--pet-step', stepFor(Math.abs(startX), dur));
+    el.pet.className = 'pet walking carrying' + facing;
+    const walkIn = petAnimate(run, el.scaler, [{ translate: startX + 'px 0px' }, { translate: '0px 0px' }], { duration: dur, easing: 'cubic-bezier(.3,.05,.45,1)' });
+    const bob = petAnimate(run, el.carry, [{ translate: '0px 0px' }, { translate: '0px -4px' }, { translate: '0px 0px' }], { duration: parseFloat(stepFor(Math.abs(startX), dur)) / 2, iterations: Infinity });
+    el.scaler.classList.remove('pet-hiding');
+    await walkIn.finished.catch(() => {});
+    if (!alive()) return;
+    bob.cancel();
+
+    // Show it off: lift the card with both arms up, sparkles around it.
+    el.pet.className = 'pet showing' + facing;
+    const lift = petAnimate(run, el.carry, [{ translate: '0px 0px', scale: 1 }, { translate: '0px -12px', scale: 1.04 }], { duration: 320, easing: 'cubic-bezier(.2,.8,.3,1.2)', fill: 'forwards' });
+    petSparkles(run);
+    await petSleep(run, 950);
+    if (!alive()) return;
+
+    // Put it down where it belongs, with a small bounce.
+    el.pet.className = 'pet happy' + facing;
+    petAnimate(run, el.carry, [
+      { translate: '0px -12px', scale: 1.04 },
+      { translate: '0px 2px', scale: 0.99, offset: 0.7 },
+      { translate: '0px 0px', scale: 1 }
+    ], { duration: 380, easing: 'ease-in' });
+    lift.cancel();
+    await petSleep(run, 860);
+    if (!alive()) return;
+
+    // Wave goodbye, turn around and walk back out.
+    el.pet.className = 'pet waving' + facing;
+    await petSleep(run, 950);
+    if (!alive()) return;
+    const pr = el.pet.getBoundingClientRect();
+    const dx = fromLeft ? -(pr.right + 12) : window.innerWidth - pr.left + 12;
+    const outDur = clamp(Math.abs(dx) / (360 * speed), 0.7, 3.6) * 1000;
+    el.pet.style.setProperty('--pet-step', stepFor(Math.abs(dx), outDur));
+    el.pet.className = 'pet walking' + (fromLeft ? ' facing-left' : '');
+    const walkOut = petAnimate(run, el.pet, [{ translate: '0px 0px' }, { translate: (dx / scale) + 'px 0px' }], { duration: outDur, easing: 'cubic-bezier(.5,0,.8,.8)', fill: 'forwards' });
+    await walkOut.finished.catch(() => {});
+    if (!alive()) return;
+    petRun = null;
+    finishPet(run);
+  }
+
   /* ---------------------------------------------------------------- per-tick updates */
 
   function computeVisible(d, now) {
@@ -552,6 +753,7 @@
   viz.onFrame = (energy) => {
     const on = settings.art.pulse && current && current.kind === 'track' && current.isPlaying;
     el.art.style.setProperty('--art-energy', on ? (1 + clamp(energy, 0, 1) * 0.07).toFixed(4) : '1');
+    if (theme.effect === 'beat3d') el.card.style.setProperty('--beat', on ? clamp(energy, 0, 1).toFixed(3) : '0');
   };
 
   /* ---------------------------------------------------------------- events */
@@ -586,6 +788,13 @@
     auth = a;
     render();
   });
+  if (api.onPetPlay) {
+    // "Play the animation" button in Settings → Pets.
+    api.onPetPlay(() => {
+      ++transitionToken;
+      petEntrance(current || currentDisplay());
+    });
+  }
   api.onPreview((v) => {
     preview = Boolean(v);
     render();

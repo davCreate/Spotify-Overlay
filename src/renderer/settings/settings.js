@@ -9,6 +9,7 @@
   const { SECTIONS } = window.SO_SCHEMA;
   const { PRESETS, FONTS, EFFECTS, CATEGORIES, getEffectiveTheme, findTheme } = window.SO_THEMES;
   const { getPath } = window.SO_DEFAULTS;
+  const { PETS } = window.SO_PETS;
   const I18N = window.SO_I18N;
 
   const REPO_URL = 'https://github.com/davCreate/Spotify-Overlay';
@@ -712,7 +713,38 @@
     });
   }
 
-  const CUSTOM = { account: accountSection, themes: themesSection, obs: obsSection, advanced: advancedSection, updates: updatesSection, about: aboutSection };
+  function petsSection(body, section) {
+    const grid = h('div', { class: 'pet-grid' });
+    const playBtn = h('button', { class: 'btn btn-small btn-primary', type: 'button', text: tr('Play the animation now'), onclick: () => run(() => api.playPet()) });
+    const note = h('div', { class: 'muted', text: tr('The pet only appears while the overlay is locked. Unlock it to move the overlay as usual.') });
+    body.append(h('section', { class: 'group' },
+      h('div', { class: 'group-title', text: tr('Choose a pet') }),
+      grid,
+      h('div', { class: 'pet-actions' }, playBtn, note)
+    ));
+    section.groups.forEach((g) => body.appendChild(buildGroup(g)));
+
+    let lastSig = '';
+    customUpdaters.push(() => {
+      const sig = JSON.stringify([settings.pet.type, lang]);
+      if (sig === lastSig) return;
+      lastSig = sig;
+      grid.replaceChildren(...PETS.map((p) => {
+        const active = p.id === settings.pet.type;
+        const pet = h('div', { class: 'pet walking' });
+        pet.innerHTML = p.svg();
+        return h('button', { class: 'pet-card' + (active ? ' active' : ''), type: 'button', 'aria-pressed': active ? 'true' : 'false', onclick: () => run(() => api.setSetting('pet.type', p.id)) },
+          h('div', { class: 'pet-stage' }, pet, h('div', { class: 'mini-card' })),
+          h('div', { class: 'pet-meta' },
+            h('div', { class: 'pet-name', text: p.name }),
+            h('div', { class: 'pet-desc', text: tr(p.description) })
+          )
+        );
+      }));
+    });
+  }
+
+  const CUSTOM = { account: accountSection, themes: themesSection, pets: petsSection, obs: obsSection, advanced: advancedSection, updates: updatesSection, about: aboutSection };
 
   /* ---------------------------------------------------------------- navigation */
 

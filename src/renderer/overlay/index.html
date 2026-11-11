@@ -7,10 +7,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Spotify Overlay</title>
   <link rel="stylesheet" href="overlay.css">
+  <link rel="stylesheet" href="effects-3d.css">
+  <link rel="stylesheet" href="../../shared/pets.css">
 </head>
 <body>
   <div id="scaler">
+    <div id="carry">
     <div id="card" class="card">
+      <!-- Extra faces and props used by some 3D effects (cube sides, strings, projector, ...). -->
+      <div class="deco" aria-hidden="true"><i class="d1"></i><i class="d2"></i><i class="d3"></i><i class="d4"></i><i class="d5"></i><i class="d6"></i></div>
       <div class="clip">
         <div class="bg-album"></div>
         <div class="bg-layer"></div>
@@ -40,10 +45,13 @@
       <div class="viz-bottom-slot"><canvas class="viz"></canvas></div>
       <div class="edit-hint">Drag to move · lock it from the tray or Ctrl+Shift+L</div>
     </div>
+    </div>
+    <div id="pet" class="pet" hidden></div>
   </div>
 
   <script src="../../shared/defaults.js"></script>
   <script src="../../shared/themes.js"></script>
+  <script src="../../shared/pets.js"></script>
   <script src="../../shared/locales/es.js"></script>
   <script src="../../shared/locales/fr.js"></script>
   <script src="../../shared/locales/ru.js"></script>

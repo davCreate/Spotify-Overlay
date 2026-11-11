@@ -15,6 +15,7 @@ const vm = require('vm');
 
 const i18n = require('../src/shared/i18n');
 const themes = require('../src/shared/themes');
+const pets = require('../src/shared/pets');
 
 const SRC = path.join(__dirname, '..', 'src');
 const SOURCE_FILES = [
@@ -109,6 +110,7 @@ function collectKeys() {
 
   // Theme catalog
   themes.PRESETS.forEach((t) => add(t.description));
+  pets.PETS.forEach((p) => add(p.description));
   themes.CATEGORIES.forEach((c) => { add(c.name); add(c.description); });
   Object.values(themes.EFFECTS).forEach((e) => add(e.label));
   Object.values(themes.FONTS).forEach((f) => add(f.label));

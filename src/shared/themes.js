@@ -38,7 +38,14 @@
     shimmer: { label: 'Shimmer', description: 'A light sheen sweeps across the card every few seconds.', margin: 0 },
     scanlines: { label: 'CRT scanlines', description: 'Old-monitor scanlines with a soft phosphor glow.', margin: 6 },
     pixel: { label: 'Pixel / 8-bit', description: 'Square corners, chunky border and a hard pixel shadow.', margin: 12 },
-    sticker: { label: 'Sticker', description: 'Thick white outline and a slight angle, like a sticker.', margin: 16 }
+    sticker: { label: 'Sticker', description: 'Thick white outline and a slight angle, like a sticker.', margin: 16 },
+    orbit: { label: '3D orbit', description: 'Turns left and right in 3D while a light sweeps over it.', margin: 46 },
+    hover3d: { label: '3D hover', description: 'Floats in a figure eight above its own shadow.', margin: 48 },
+    cube: { label: '3D box', description: 'A solid box with real top, bottom and side faces that slowly turns.', margin: 52 },
+    parallax: { label: '3D parallax', description: 'Cover, text and background float at different depths.', margin: 40 },
+    hologram: { label: 'Hologram projector', description: 'Leans back and flickers above a glowing projector.', margin: 60 },
+    beat3d: { label: 'Beat pulse 3D', description: 'Jumps toward you on the beat of the music.', margin: 44 },
+    swing: { label: 'Hanging sign', description: 'Hangs from two strings and swings gently.', margin: 58 }
   };
 
   /** Gallery sections, in display order. */
@@ -161,6 +168,62 @@
     preset('soft-night', 'Soft Night', '3d', 'Dark neumorphism with soft highlights.', {
       background: 'solid', bg: '#2b2f3a', bgOpacity: 1, text: '#e2e8f0', subtext: '#94a3b8',
       accent: '#22d3ee', accent2: '#818cf8', shadow: 0, font: 'rounded', effect: 'neumorph'
+    }),
+    preset('sapphire-orbit', 'Sapphire Orbit', '3d', 'Deep blue card that turns in 3D under a moving light.', {
+      background: 'gradient', bg: '#0a1a4a', bg2: '#2547d0', gradientAngle: 130, bgOpacity: 0.97,
+      text: '#ffffff', subtext: '#c7d6ff', accent: '#5ee7ff', accent2: '#a78bfa', shadow: 30, effect: 'orbit'
+    }),
+    preset('golden-turntable', 'Golden Turntable', '3d', 'Black and gold, turning slowly like a record on display.', {
+      background: 'gradient', bg: '#0c0c0c', bg2: '#2e2410', gradientAngle: 150, bgOpacity: 1, text: '#fbefd0', subtext: '#d2b06a',
+      accent: '#e6b84a', accent2: '#fff1c1', borderWidth: 1, borderColor: '#b8912f', shadow: 28, font: 'serif', effect: 'orbit'
+    }),
+    preset('hover-mint', 'Hover Mint', '3d', 'Fresh mint card floating above the screen.', {
+      background: 'gradient', bg: '#34d399', bg2: '#0d9488', gradientAngle: 150, bgOpacity: 1,
+      text: '#f0fdf4', subtext: '#d1fae5', accent: '#fef9c3', accent2: '#ffffff', shadow: 10, font: 'rounded', effect: 'hover3d'
+    }),
+    preset('cloud-nine', 'Cloud Nine', '3d', 'Light sky glass that drifts like a cloud.', {
+      background: 'glass', bg: '#bfdbfe', bg2: '#ffffff', bgOpacity: 0.6, text: '#0f172a', subtext: '#334155',
+      accent: '#3b82f6', accent2: '#f472b6', borderWidth: 1, borderColor: '#ffffff', shadow: 10, font: 'rounded', effect: 'hover3d'
+    }),
+    preset('neon-cube', 'Neon Cube', '3d', 'A dark box with glowing pink edges that turns in space.', {
+      background: 'solid', bg: '#1a1033', bgOpacity: 1, text: '#ffffff', subtext: '#f0abfc',
+      accent: '#ff3ec8', accent2: '#00e5ff', borderWidth: 1, borderColor: '#ff3ec8', glow: 18, shadow: 24, font: 'condensed', effect: 'cube'
+    }),
+    preset('toy-block', 'Toy Block', '3d', 'A chunky yellow toy block with real sides.', {
+      background: 'solid', bg: '#fbbf24', bgOpacity: 1, text: '#3b1d00', subtext: '#7c4a03',
+      accent: '#ef4444', accent2: '#2563eb', shadow: 20, font: 'rounded', effect: 'cube'
+    }),
+    preset('obsidian-box', 'Obsidian Box', '3d', 'A heavy black stone box with a violet sheen.', {
+      background: 'gradient', bg: '#18181b', bg2: '#3b0764', gradientAngle: 160, bgOpacity: 1, text: '#faf5ff', subtext: '#c4b5fd',
+      accent: '#a855f7', accent2: '#e879f9', shadow: 30, effect: 'cube'
+    }),
+    preset('depth-field', 'Depth Field', '3d', 'Cover and text float above a glowing purple backdrop.', {
+      background: 'gradient', bg: '#1e1b4b', bg2: '#581c87', gradientAngle: 135, bgOpacity: 0.97,
+      text: '#ffffff', subtext: '#ddd6fe', accent: '#f472b6', accent2: '#60a5fa', shadow: 30, effect: 'parallax'
+    }),
+    preset('paper-layers', 'Paper Layers', '3d', 'Warm paper cut-out layers with real depth.', {
+      background: 'solid', bg: '#fdf2e9', bgOpacity: 1, text: '#3f2a1d', subtext: '#8a6a52',
+      accent: '#f97316', accent2: '#14b8a6', shadow: 22, font: 'serif', effect: 'parallax'
+    }),
+    preset('hologram-cyan', 'Hologram', '3d', 'A flickering blue hologram above its projector.', {
+      background: 'solid', bg: '#021b2b', bgOpacity: 0.55, text: '#e0fbff', subtext: '#7ee8fa',
+      accent: '#22d3ee', accent2: '#a5f3fc', glow: 10, shadow: 0, font: 'mono', effect: 'hologram'
+    }),
+    preset('mars-projection', 'Mars Projection', '3d', 'A red-orange hologram broadcast from far away.', {
+      background: 'solid', bg: '#2a0a02', bgOpacity: 0.55, text: '#ffe4d6', subtext: '#fdba74',
+      accent: '#fb5607', accent2: '#ffbe0b', glow: 10, shadow: 0, font: 'condensed', effect: 'hologram'
+    }),
+    preset('bass-drop', 'Bass Drop', '3d', 'Black card that punches toward you on every beat.', {
+      background: 'gradient', bg: '#050505', bg2: '#1a0b2e', gradientAngle: 135, bgOpacity: 0.97,
+      text: '#ffffff', subtext: '#c4b5fd', accent: '#ff2bd6', accent2: '#2bf3ff', glow: 8, shadow: 24, font: 'display', effect: 'beat3d'
+    }),
+    preset('heartbeat', 'Heartbeat', '3d', 'Deep red card that pulses with the music.', {
+      background: 'gradient', bg: '#3b0410', bg2: '#9f1239', gradientAngle: 160, bgOpacity: 0.97,
+      text: '#fff1f2', subtext: '#fecdd3', accent: '#fb7185', accent2: '#fda4af', glow: 6, shadow: 26, font: 'rounded', effect: 'beat3d'
+    }),
+    preset('cafe-sign', 'Cafe Sign', '3d', 'A wooden cafe sign hanging from a nail.', {
+      background: 'gradient', bg: '#5b3a1e', bg2: '#8b5a2b', gradientAngle: 100, bgOpacity: 1,
+      text: '#fff7e6', subtext: '#f1d3a5', accent: '#fbbf24', accent2: '#fde68a', borderWidth: 2, borderColor: '#3b240f', shadow: 20, font: 'serif', effect: 'swing'
     }),
 
     /* Glass */

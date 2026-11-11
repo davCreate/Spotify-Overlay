@@ -71,6 +71,8 @@ let overlayVisible = true;
 let loggingIn = false;
 let shortcutStatus = {};
 let moveSaveTimer = null;
+/** Window bounds saved while a pet animation has stretched the overlay to the screen edge. */
+let petStage = null;
 let pendingSection = null;
 
 /* ------------------------------------------------------------------ helpers */
@@ -207,7 +209,7 @@ function createOverlay() {
   const savePos = () => {
     clearTimeout(moveSaveTimer);
     moveSaveTimer = setTimeout(() => {
-      if (!overlayWin || overlayWin.isDestroyed()) return;
+      if (!overlayWin || overlayWin.isDestroyed() || petStage) return;
       const [x, y] = overlayWin.getPosition();
       store.set('window.x', x);
       store.set('window.y', y);
@@ -218,8 +220,41 @@ function createOverlay() {
   if (IS_DEV) overlayWin.webContents.openDevTools({ mode: 'detach' });
 }
 
+/**
+ * Pet animation: stretch the transparent overlay window from the card to the left or right
+ * screen edge, so the pet can walk in from outside the screen. The card stays exactly where
+ * it was; the renderer shifts its content by the returned `offset`.
+ */
+function stagePet(side) {
+  if (!overlayWin || overlayWin.isDestroyed()) return null;
+  const orig = petStage ? petStage.orig : overlayWin.getBounds();
+  const d = screen.getDisplayMatching(orig).bounds;
+  let dir = side === 'left' || side === 'right' ? side : null;
+  if (!dir) {
+    const center = orig.x + orig.width / 2;
+    dir = center - d.x <= d.x + d.width - center ? 'left' : 'right';
+  }
+  const left = dir === 'left';
+  const x = left ? Math.min(d.x, orig.x) : orig.x;
+  const right = left ? orig.x + orig.width : Math.max(d.x + d.width, orig.x + orig.width);
+  petStage = { orig };
+  overlayWin.setIgnoreMouseEvents(true, { forward: true });
+  overlayWin.setBounds({ x, y: orig.y, width: Math.max(orig.width, right - x), height: orig.height });
+  return { side: dir, offset: orig.x - x, distance: left ? orig.x - x : right - (orig.x + orig.width) };
+}
+
+function unstagePet() {
+  if (!petStage) return;
+  const { orig } = petStage;
+  petStage = null;
+  if (!overlayWin || overlayWin.isDestroyed()) return;
+  overlayWin.setBounds(orig);
+  applyLock();
+}
+
 function applyLock() {
   if (!overlayWin || overlayWin.isDestroyed()) return;
+  if (petStage) return; // re-applied when the pet animation ends
   const locked = settings().layout.locked;
   // Locked = fully click-through so it never blocks games or apps underneath.
   overlayWin.setIgnoreMouseEvents(locked, locked ? { forward: true } : undefined);
@@ -502,8 +537,12 @@ function registerIpc() {
 
   handle('overlay:visible-get', () => overlayVisible);
   handle('overlay:visible-set', (v) => setOverlayVisible(Boolean(v)));
+  handle('overlay:pet-stage', (side) => stagePet(side));
+  handle('overlay:pet-unstage', () => unstagePet());
+  handle('pet:play', () => sendTo(overlayWin, 'pet-play', true));
   handle('overlay:reset-position', () => {
     if (!overlayWin) return;
+    unstagePet();
     const a = screen.getPrimaryDisplay().workArea;
     const [w] = overlayWin.getSize();
     overlayWin.setPosition(a.x + a.width - w - 16, a.y + 16);
@@ -518,6 +557,7 @@ function registerIpc() {
   // Fire-and-forget: overlay reports its content size so the window hugs the card.
   ipcMain.on('overlay:resize', (event, size) => {
     if (!overlayWin || event.sender !== overlayWin.webContents || !size) return;
+    if (petStage) return; // the renderer re-sends its size after the pet animation
     const width = Math.round(Math.min(2400, Math.max(40, Number(size.width) || 0)));
     const height = Math.round(Math.min(2400, Math.max(40, Number(size.height) || 0)));
     const [x, y] = overlayWin.getPosition();

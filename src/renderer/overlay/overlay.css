@@ -51,7 +51,8 @@ body { font-family: var(--font); color: var(--text); }
 
 #scaler {
   position: absolute;
-  left: var(--margin);
+  /* --stage-offset: extra room on the left while a pet walks in from the screen edge. */
+  left: calc(var(--margin) + var(--stage-offset, 0px));
   top: var(--margin);
   transform: scale(var(--scale));
   transform-origin: top left;
@@ -278,7 +279,9 @@ body.unlocked .edit-hint { display: block; }
 
 /* ---------------------------------------------------------------- theme effects (theme.effect) */
 
-#scaler { perspective: 900px; }
+#scaler, #carry { perspective: 900px; }
+#carry { position: relative; }
+#scaler.pet-hiding #carry { opacity: 0; }
 .viz-bg-slot { z-index: 1; }
 .clip::after { content: none; }
 
