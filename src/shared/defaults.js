@@ -24,7 +24,7 @@
       language: 'auto',
       launchAtStartup: false,
       startHidden: false,
-      pollInterval: 1000,
+      pollInterval: 3000,
       hideWhenIdle: false,
       hideWhenPaused: false,
       pauseHideDelay: 5,

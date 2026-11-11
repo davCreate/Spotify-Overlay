@@ -175,7 +175,7 @@
     "High-contrast yellow and cyan on deep black.": "Amarillo y cian de alto contraste sobre negro profundo.",
     "Holographic": "Holográfico",
     "Horizontal (art left)": "Horizontal (portada a la izquierda)",
-    "How often Spotify is asked what is playing. Progress moves smoothly in between. 1000 ms is recommended.": "Cada cuánto se pregunta a Spotify qué está sonando. El progreso avanza con suavidad entre medias. Se recomiendan 1000 ms.",
+    "How often Spotify is asked what is playing. Progress moves smoothly in between. 3000 ms is recommended; very low values can get you rate limited by Spotify.": "Cada cuánto se pregunta a Spotify qué está sonando. El progreso avanza con suavidad entre medias. Se recomiendan 3000 ms; valores muy bajos pueden hacer que Spotify limite las peticiones.",
     "Idle animation": "Animación en reposo",
     "Ignored when placed behind everything.": "Se ignora cuando está detrás de todo.",
     "Import settings": "Importar ajustes",

@@ -25,7 +25,7 @@ const MAX_CUSTOM_THEMES = 50;
 /** Numeric limits enforced on the main side (the UI also enforces them). */
 const NUMBER_LIMITS = {
   'account.redirectPort': [1024, 65535],
-  'general.pollInterval': [500, 10000],
+  'general.pollInterval': [1000, 10000],
   'general.pauseHideDelay': [0, 600],
   'general.autoHideAfter': [1, 600],
   'layout.width': [220, 900],

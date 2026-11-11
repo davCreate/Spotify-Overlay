@@ -21,6 +21,14 @@ function pickImage(images, target = 300) {
   return (sorted.find((i) => (i.width || 0) >= target) || sorted[sorted.length - 1]).url;
 }
 
+/** Human-readable duration for a wait given in seconds, e.g. "45s", "3m 20s", "16h 9m". */
+function formatWait(seconds) {
+  const s = Math.max(0, Math.round(seconds));
+  if (s < 60) return `${s}s`;
+  if (s < 3600) return `${Math.floor(s / 60)}m ${s % 60}s`;
+  return `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m`;
+}
+
 /** Convert a /me/player response into the shape the overlay understands. */
 function normalizePlayback(body) {
   if (!body || !body.item) {
@@ -147,7 +155,7 @@ class SpotifyClient extends EventEmitter {
     if (res.status === 429) {
       const wait = Number(res.headers.get('retry-after')) || 5;
       this.backoffUntil = Date.now() + wait * 1000;
-      throw new Error(`Rate limited by Spotify, retrying in ${wait}s`);
+      throw Object.assign(new Error(`Rate limited by Spotify, retrying in ${formatWait(wait)}`), { rateLimited: true });
     }
     if (res.status === 204) return null;
     if (!res.ok) {
@@ -214,7 +222,7 @@ class SpotifyClient extends EventEmitter {
         this.emitStatus();
       }
       this.emit('playback', this.lastState);
-      this.schedule(interval);
+      this.schedule(this.nextDelay(interval));
     } catch (err) {
       if (!err.notConnected) {
         const msg = err.message || String(err);
@@ -224,9 +232,22 @@ class SpotifyClient extends EventEmitter {
           this.emitStatus();
         }
       }
-      // Network problems: back off a bit so we don't spam.
-      this.schedule(Math.max(interval * 3, 3000));
+      // Rate limited: wait exactly as long as Spotify asked. Network problems: back off a bit so we don't spam.
+      if (err.rateLimited) this.schedule(Math.max(this.backoffUntil - Date.now(), 1000));
+      else this.schedule(Math.max(interval * 3, 3000));
     }
+  }
+
+  /**
+   * Delay before the next poll. While playing, use the configured interval but poll right after
+   * the track should end so the next song shows up quickly. While paused or idle nothing changes
+   * on its own, so poll much less often to stay well under Spotify's rate limits.
+   */
+  nextDelay(interval) {
+    const s = this.lastState;
+    if (!s.active || !s.isPlaying) return Math.max(interval * 3, 5000);
+    const remaining = s.track && s.track.durationMs ? s.track.durationMs - s.progressMs : Infinity;
+    return Math.max(1000, Math.min(interval, remaining + 500));
   }
 }
 

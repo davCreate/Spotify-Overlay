@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.0.3] - 2026-11-11
+
+### Fixed
+- "Rate limited by Spotify" errors. The app no longer asks Spotify what is playing so often: the default refresh interval is now 3000 ms (minimum 1000 ms), and while playback is paused or idle it checks much less often. While a song plays it still checks right after the song should end, so the next track shows up quickly.
+- When Spotify does rate limit the app, it now waits exactly as long as Spotify asks and shows a readable time (for example "retrying in 16h 9m").
+
+### Note
+- If you already see a long rate-limit wait, it comes from Spotify and is tied to your Client ID. Wait it out, or create a new app in the Spotify Developer Dashboard and paste its Client ID in Settings → Account. Then keep the refresh interval at 3000 ms or more.
+
 ## [1.0.2] - 2026-11-09
 
 ### Added
@@ -35,6 +44,7 @@ All notable changes to this project are documented here. The format is based on 
 - Built-in update checker (Settings → Updates and the tray menu). The Windows installer and Linux AppImage download and install updates in-app; other builds link to the download page. Automatic checks on launch and every 6 hours, with a notification when a new version is out.
 - Unit tests, a smoke-test mode and a CI workflow that builds installers for Windows, macOS and Linux.
 
+[1.0.3]: https://github.com/davCreate/Spotify-Overlay/releases/tag/v1.0.3
 [1.0.2]: https://github.com/davCreate/Spotify-Overlay/releases/tag/v1.0.2
 [1.0.1]: https://github.com/davCreate/Spotify-Overlay/releases/tag/v1.0.1
 [1.0.0]: https://github.com/davCreate/Spotify-Overlay/releases/tag/v1.0.0

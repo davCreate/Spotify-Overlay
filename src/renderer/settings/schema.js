@@ -84,7 +84,7 @@
         {
           title: 'Updates from Spotify',
           fields: [
-            { key: 'general.pollInterval', label: 'Refresh interval', type: 'range', min: 500, max: 10000, step: 250, unit: 'ms', help: 'How often Spotify is asked what is playing. Progress moves smoothly in between. 1000 ms is recommended.' }
+            { key: 'general.pollInterval', label: 'Refresh interval', type: 'range', min: 1000, max: 10000, step: 250, unit: 'ms', help: 'How often Spotify is asked what is playing. Progress moves smoothly in between. 3000 ms is recommended; very low values can get you rate limited by Spotify.' }
           ]
         },
         {

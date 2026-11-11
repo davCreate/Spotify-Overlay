@@ -175,7 +175,7 @@
     "High-contrast yellow and cyan on deep black.": "Контрастные жёлтый и голубой на глубоком чёрном.",
     "Holographic": "Голография",
     "Horizontal (art left)": "Горизонтальный (обложка слева)",
-    "How often Spotify is asked what is playing. Progress moves smoothly in between. 1000 ms is recommended.": "Как часто запрашивать у Spotify, что играет. Между запросами прогресс движется плавно. Рекомендуется 1000 мс.",
+    "How often Spotify is asked what is playing. Progress moves smoothly in between. 3000 ms is recommended; very low values can get you rate limited by Spotify.": "Как часто запрашивать у Spotify, что играет. Между запросами прогресс движется плавно. Рекомендуется 3000 мс; слишком низкие значения могут привести к ограничению запросов со стороны Spotify.",
     "Idle animation": "Анимация в покое",
     "Ignored when placed behind everything.": "Не действует, если размещён позади всего.",
     "Import settings": "Импорт настроек",
