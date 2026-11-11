@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.0.9] - 2026-11-11
+
+### Added
+- Pet customization in Settings → Pets: body color (Orange, Blue, Green, Purple, Pink, Graphite), accessory (top hat, headphones, bow tie, glasses), idle on or off, and time to linger.
+- Idle behaviour: after the wave the pet stays by the card and looks around, yawns, stretches, taps its feet, hops or waves, never the same thing twice in a row.
+- The pet falls asleep with z notes when the music is paused and wakes with a hop when playback resumes.
+
+### Changed
+- The pet colors now come from CSS variables, so every palette uses the same pixel model.
+- The Web API is never polled faster than every 5 s (see 1.0.8 for the rate limit).
+
 ## [1.0.8] - 2026-11-11
 
 ### Added

@@ -76,7 +76,16 @@
             { key: 'pet.enabled', label: 'Pet brings every new song', type: 'toggle', help: 'The pet walks in from the edge of the screen carrying the overlay, shows it off, puts it in its place and walks away.' },
             { key: 'pet.side', label: 'Comes in from', type: 'select', options: opt(['auto', 'Nearest screen edge'], ['left', 'Left edge'], ['right', 'Right edge']) },
             { key: 'pet.size', label: 'Pet size', type: 'range', min: 0.5, max: 2, step: 0.05, percent: true },
-            { key: 'pet.speed', label: 'Walking speed', type: 'range', min: 0.5, max: 2.5, step: 0.1, unit: '×' }
+            { key: 'pet.speed', label: 'Walking speed', type: 'range', min: 0.5, max: 2.5, step: 0.1, unit: '×' },
+            { key: 'pet.idle', label: 'Idles beside the card', type: 'toggle', help: 'After the wave the pet stays by the card: it looks around, yawns, stretches, taps its feet and falls asleep when the music is paused.' },
+            { key: 'pet.lingerSeconds', label: 'Time to linger', type: 'range', min: 0, max: 30, step: 1, unit: 's' }
+          ]
+        },
+        {
+          title: 'Look',
+          fields: [
+            { key: 'pet.color', label: 'Color', type: 'select', options: opt(['orange', 'Orange'], ['blue', 'Blue'], ['green', 'Green'], ['purple', 'Purple'], ['pink', 'Pink'], ['graphite', 'Graphite']) },
+            { key: 'pet.accessory', label: 'Accessory', type: 'select', options: opt(['none', 'None'], ['tophat', 'Top hat'], ['headphones', 'Headphones'], ['bowtie', 'Bow tie'], ['glasses', 'Glasses']) }
           ]
         }
       ]

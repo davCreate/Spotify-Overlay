@@ -1,7 +1,7 @@
 {
   "name": "spotify-overlay",
   "productName": "Spotify Overlay",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "A highly customizable, always-on-top overlay that shows your currently playing Spotify track with album art, real-time progress, audio visualizers and themes.",
   "main": "src/main/main.js",
   "author": "davCreate",

@@ -3,6 +3,13 @@
 .pet {
   --pet-size: 1;
   --pet-step: 380ms;
+  /* Colors (overlay.js applies PALETTES here; these are the Orange defaults). */
+  --pet-top: #e4835f;
+  --pet-bottom: #cc6443;
+  --pet-limb: #b95a3c;
+  --pet-dark: #cc6443;
+  --pet-ink: #1d1410;
+  --pet-acc: #2a2a33;
   position: absolute;
   width: calc(120px * var(--pet-size));
   aspect-ratio: 90 / 56;
@@ -153,6 +160,70 @@
   border-radius: 50%;
   filter: drop-shadow(0 0 4px var(--spark, #ffd9a8));
 }
+
+/* ---------------------------------------------------------------- colors and accessories */
+
+.pet-stop-top { stop-color: var(--pet-top); }
+.pet-stop-bottom { stop-color: var(--pet-bottom); }
+.pet-skin-limb { fill: var(--pet-limb); }
+.pet-skin-dark { fill: var(--pet-dark); }
+.pet-ink { fill: var(--pet-ink); }
+.pet-ink-stroke { stroke: var(--pet-ink); }
+.pet-acc-fill { fill: var(--pet-acc); }
+.pet-acc-stroke { stroke: var(--pet-acc); }
+.pet .pet-acc { display: none; }
+.pet[data-acc="tophat"] .pet-acc-tophat,
+.pet[data-acc="headphones"] .pet-acc-headphones,
+.pet[data-acc="bowtie"] .pet-acc-bowtie,
+.pet[data-acc="glasses"] .pet-acc-glasses { display: inline; }
+.pet .pet-yawn { transform-box: fill-box; transform-origin: 50% 50%; }
+
+/* ---------------------------------------------------------------- idle behaviour (linger) */
+
+/* Looking around: the eyes slide left, then right. */
+.pet.idle-look .pet-eye { animation: pet-look 1.6s ease-in-out; }
+@keyframes pet-look {
+  0%, 100% { translate: 0 0; }
+  25%, 50% { translate: -3px 0; }
+  75% { translate: 3px 0; }
+}
+
+/* Yawn: eyes half close, the mouth opens wide and closes again. */
+.pet.idle-yawn .pet-eye { animation: pet-yawn-eyes 1.8s ease-in-out; }
+.pet.idle-yawn .pet-mouth { opacity: 0; }
+.pet.idle-yawn .pet-yawn { animation: pet-yawn 1.8s ease-in-out; }
+.pet.idle-yawn .pet-body { animation: pet-yawn-body 1.8s ease-in-out; }
+@keyframes pet-yawn-eyes { 0%, 100% { scale: 1 1; } 40%, 70% { scale: 1 0.35; } }
+@keyframes pet-yawn { 0%, 100% { opacity: 0; scale: 1 0.2; } 35%, 60% { opacity: 1; scale: 1 1.2; } 85% { opacity: 0; scale: 1 0.3; } }
+@keyframes pet-yawn-body { 0%, 100% { scale: 1 1; } 45% { scale: 1.02 0.97; } }
+
+/* Stretch: body grows tall, both arms reach up, then relaxes. */
+.pet.idle-stretch .pet-body { transform-box: view-box; transform-origin: 45px 30px; animation: pet-stretch 1.8s ease-in-out; }
+.pet.idle-stretch .pet-arm-front { animation: pet-stretch-front 1.8s ease-in-out; }
+.pet.idle-stretch .pet-arm-back { animation: pet-stretch-back 1.8s ease-in-out; }
+@keyframes pet-stretch { 0%, 100% { scale: 1 1; } 50% { scale: 0.97 1.06; } }
+@keyframes pet-stretch-front { 0%, 100% { rotate: 28deg; } 50% { rotate: -100deg; } }
+@keyframes pet-stretch-back { 0%, 100% { rotate: -28deg; } 50% { rotate: 100deg; } }
+
+/* Tapping a foot while listening. */
+.pet.idle-tap .pet-leg-a { animation: pet-tap 400ms ease-in-out 4; }
+.pet.idle-tap .pet-leg-b { animation: pet-tap 400ms ease-in-out 4 reverse; }
+.pet.idle-tap .pet-body { transform-box: view-box; transform-origin: 45px 30px; animation: pet-nod 1.6s ease-in-out; }
+@keyframes pet-tap { 0%, 100% { translate: 0 0; } 50% { translate: 0 -2px; } }
+@keyframes pet-nod { 0%, 100% { rotate: 0deg; } 50% { rotate: 4deg; } }
+
+/* Small hop and a little wave. */
+.pet.idle-hop .pet-body, .pet.idle-hop .pet-legs { animation: pet-hop 500ms cubic-bezier(.3, 0, .5, 1) 1; }
+.pet.idle-hop .pet-shadow { animation: pet-hop-shadow 500ms cubic-bezier(.3, 0, .5, 1) 1; }
+.pet.idle-wave .pet-arm-front { animation: pet-wave 260ms ease-in-out 4 alternate; }
+
+/* Nodding off: eyes closed, slow breathing, sleep notes float up. */
+.pet.sleeping .pet-eye { animation: none; scale: 1 0.12; }
+.pet.sleeping .pet-body { animation: pet-sleep-breathe 3.6s ease-in-out infinite; }
+.pet.sleeping .pet-mouth { opacity: 0; }
+.pet.sleeping .pet-arm-front { rotate: 60deg; transition: rotate 600ms ease; }
+.pet.sleeping .pet-arm-back { rotate: -60deg; transition: rotate 600ms ease; }
+@keyframes pet-sleep-breathe { 0%, 100% { translate: 0 0; } 50% { translate: 0 -1.5px; } }
 
 /* No prefers-reduced-motion override here: the pet is opt-in (Settings → Pets), and Windows
    reports reduced motion whenever "Animation effects" is off, which froze the pet completely. */

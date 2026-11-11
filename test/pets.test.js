@@ -51,3 +51,13 @@ test('every theme effect has overlay CSS', () => {
     assert.ok(css.includes(`.fx-${id}`), `no CSS for effect ${id}`);
   }
 });
+
+test('pet color and accessory settings match the catalog', () => {
+  assert.deepEqual(ENUMS['pet.color'], Object.keys(pets.PALETTES));
+  assert.deepEqual(ENUMS['pet.accessory'], pets.ACCESSORIES);
+  const svg = pets.PETS[0].svg();
+  for (const acc of ['tophat', 'headphones', 'bowtie', 'glasses']) {
+    assert.ok(svg.includes(`pet-acc-${acc}`), `missing accessory ${acc}`);
+  }
+  assert.ok(svg.includes('pet-yawn'), 'missing yawn mouth');
+});

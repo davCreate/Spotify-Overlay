@@ -103,7 +103,11 @@
       type: 'claude',
       side: 'auto',
       size: 1,
-      speed: 1
+      speed: 1,
+      color: 'orange',
+      accessory: 'none',
+      idle: true,
+      lingerSeconds: 8
     },
 
     shortcuts: {

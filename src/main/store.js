@@ -49,6 +49,7 @@ const NUMBER_LIMITS = {
   'animation.duration': [0, 3000],
   'pet.size': [0.5, 2],
   'pet.speed': [0.5, 2.5],
+  'pet.lingerSeconds': [0, 30],
   'obs.port': [1024, 65535]
 };
 
@@ -65,7 +66,9 @@ const ENUMS = {
   'animation.trackChange': ['none', 'fade', 'slide', 'zoom', 'flip', 'blur'],
   'animation.idle': ['none', 'float', 'breathe'],
   'pet.type': ['claude'],
-  'pet.side': ['auto', 'left', 'right']
+  'pet.side': ['auto', 'left', 'right'],
+  'pet.color': ['orange', 'blue', 'green', 'purple', 'pink', 'graphite'],
+  'pet.accessory': ['none', 'tophat', 'headphones', 'bowtie', 'glasses']
 };
 
 class SettingsStore extends EventEmitter {

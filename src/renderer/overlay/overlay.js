@@ -633,8 +633,7 @@
   }
 
   /* Music notes that float up from the pet while it dances. */
-  function petNotes(run) {
-    const glyphs = ['♪', '♫', '♬'];
+  function petNotes(run, glyphs = ['♪', '♫', '♬']) {
     for (let i = 0; i < glyphs.length; i++) {
       const n = document.createElement('div');
       n.className = 'pet-note';
@@ -696,6 +695,7 @@
       facing = fromLeft ? '' : ' facing-left';
       ensurePetSvg();
       el.pet.style.setProperty('--pet-size', p.size);
+      applyPetLook();
       el.pet.style.translate = '';
       el.pet.hidden = false;
       el.pet.className = 'pet';
@@ -792,10 +792,14 @@
     await petSleep(run, 1500);
     if (!alive()) return;
 
-    // Wave goodbye, turn around and walk back out.
+    // Wave goodbye, then stay by the card for a while (see petLinger).
     el.pet.className = 'pet waving' + facing;
     await petSleep(run, 900);
     if (!alive()) return;
+    await petLinger(run, facing);
+    if (!alive()) return;
+
+    // Turn around and walk back out.
     const pr = el.pet.getBoundingClientRect();
     const dx = fromLeft ? -(pr.right + 12) : window.innerWidth - pr.left + 12;
     const outDur = clamp(Math.abs(dx) / (320 * speed), 0.7, 4) * 1000;
@@ -806,6 +810,66 @@
     if (!alive()) return;
     petRun = null;
     finishPet(run);
+  }
+
+  /* Colors and accessory from Settings → Pets → Look. */
+  function applyPetLook() {
+    const p = settings.pet;
+    const pal = PETS.PALETTES[p.color] || PETS.PALETTES.orange;
+    el.pet.style.setProperty('--pet-top', pal.top);
+    el.pet.style.setProperty('--pet-bottom', pal.bottom);
+    el.pet.style.setProperty('--pet-limb', pal.limb);
+    el.pet.style.setProperty('--pet-dark', pal.dark);
+    el.pet.dataset.acc = p.accessory || 'none';
+  }
+
+  const IDLE_ACTIONS = [
+    ['idle-look', 1600],
+    ['idle-yawn', 1800],
+    ['idle-stretch', 1800],
+    ['idle-tap', 1600],
+    ['idle-hop', 500],
+    ['idle-wave', 1100]
+  ];
+
+  function playerPlaying() {
+    return Boolean(playback && playback.isPlaying);
+  }
+
+  /*
+   * After the wave the pet stays by the card for the configured time and idles: it looks around,
+   * yawns, stretches, taps its feet, hops or waves, never the same thing twice in a row. When the
+   * music is paused it falls asleep (z notes) and wakes with a hop when playback resumes.
+   */
+  async function petLinger(run, facing) {
+    const p = settings.pet;
+    const alive = () => petRun === run;
+    const end = Date.now() + (p.idle ? (p.lingerSeconds || 0) * 1000 : 0);
+    let prev = '';
+    let asleep = false;
+    while (alive() && Date.now() < end) {
+      if (!playerPlaying()) {
+        asleep = true;
+        el.pet.className = 'pet sleeping' + facing;
+        petNotes(run, ['z', 'z', 'Z']);
+        await petSleep(run, 1400);
+        continue;
+      }
+      if (asleep) {
+        asleep = false;
+        el.pet.className = 'pet happy' + facing; // wakes with a hop
+        await petSleep(run, 860);
+        continue;
+      }
+      const choices = IDLE_ACTIONS.filter(([name]) => name !== prev);
+      const [name, ms] = choices[Math.floor(Math.random() * choices.length)];
+      prev = name;
+      el.pet.className = 'pet ' + name + facing;
+      await petSleep(run, ms);
+      if (!alive()) return;
+      el.pet.className = 'pet' + facing;
+      await petSleep(run, 500 + Math.random() * 1200);
+    }
   }
 
   /* ---------------------------------------------------------------- per-tick updates */
