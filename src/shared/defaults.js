@@ -48,6 +48,7 @@
 
     art: {
       show: true,
+      tone: 'natural',
       size: 84,
       shape: 'rounded',
       spin: false,
@@ -72,6 +73,7 @@
 
     progress: {
       show: true,
+      style: 'bar',
       showTime: true,
       height: 4,
       rounded: true,
@@ -99,12 +101,22 @@
       idle: 'none'
     },
 
+    lyrics: {
+      enabled: false
+    },
+
+    history: {
+      enabled: true,
+      items: []
+    },
+
     pet: {
       enabled: false,
       type: 'claude',
       side: 'auto',
       size: 1,
       speed: 1,
+      speech: true,
       color: 'orange',
       accessory: 'none',
       idle: true,

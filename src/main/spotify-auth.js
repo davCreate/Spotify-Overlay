@@ -14,7 +14,7 @@ const { URL } = require('url');
 
 const AUTH_URL = 'https://accounts.spotify.com/authorize';
 const TOKEN_URL = 'https://accounts.spotify.com/api/token';
-const SCOPES = ['user-read-currently-playing', 'user-read-playback-state'];
+const SCOPES = ['user-read-currently-playing', 'user-read-playback-state', 'user-modify-playback-state'];
 const LOGIN_TIMEOUT_MS = 5 * 60 * 1000;
 
 function base64url(buf) {

@@ -424,3 +424,45 @@ body.island .card {
   color: #fff;
 }
 body.island:not(.island-open) .card { border-radius: 0 0 20px 20px !important; min-width: 170px; }
+
+/* ---------------------------------------------------------------- lyrics, progress styles, pet speech */
+
+.lyric { display: none; margin-top: 4px; font-style: italic; opacity: 0.85; font-size: calc(var(--artist-size) * 0.95); line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.show-lyrics .lyric { display: block; }
+body.island:not(.island-open) .card .lyric { display: none !important; }
+
+/* Segments: the bar is cut into blocks by a mask. */
+body.prog-segments .progress .bar {
+  -webkit-mask: repeating-linear-gradient(90deg, #000 0 8px, transparent 8px 11px);
+          mask: repeating-linear-gradient(90deg, #000 0 8px, transparent 8px 11px);
+}
+/* Dots: the bar is shown as a row of round dots. */
+body.prog-dots .progress .bar {
+  -webkit-mask: radial-gradient(circle, #000 55%, transparent 60%) 0 50% / 8px 100% repeat-x;
+          mask: radial-gradient(circle, #000 55%, transparent 60%) 0 50% / 8px 100% repeat-x;
+}
+
+.pet-say {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: var(--pet-top, #e4835f);
+  color: #fff;
+  font: 600 12px/1.2 system-ui, sans-serif;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  animation: pet-say-in 220ms cubic-bezier(.2, .8, .3, 1.2);
+}
+.pet-say::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  width: 10px;
+  height: 10px;
+  background: inherit;
+  transform: translateX(-50%) rotate(45deg);
+}
+@keyframes pet-say-in { from { opacity: 0; scale: 0.6; } to { opacity: 1; scale: 1; } }

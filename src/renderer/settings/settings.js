@@ -559,6 +559,19 @@
     }
   }
 
+  function historySection(body) {
+    const items = (settings.history && settings.history.items) || [];
+    const list = h('div', { class: 'history-list' });
+    if (!items.length) list.appendChild(h('div', { class: 'muted', text: tr('No songs yet. Play something and it appears here.') }));
+    for (const item of items) {
+      list.appendChild(h('div', { class: 'history-row' },
+        h('div', { class: 'history-title', text: item.title }),
+        h('div', { class: 'muted', text: [item.artist, item.at ? new Date(item.at).toLocaleString() : ''].filter(Boolean).join(' · ') })));
+    }
+    const clear = h('button', { class: 'btn btn-small', type: 'button', text: tr('Clear history'), onclick: () => run(() => api.setSetting('history.items', [])) });
+    body.appendChild(h('div', { class: 'group' }, h('div', { class: 'group-title', text: tr('Recently played') }), list, h('div', { class: 'pet-actions' }, clear)));
+  }
+
   function obsSection(body, section) {
     section.groups.forEach((g) => body.appendChild(buildGroup(g)));
     const url = h('input', { class: 'input mono', type: 'text', readonly: true, 'aria-label': tr('Browser source URL') });
@@ -744,7 +757,7 @@
     });
   }
 
-  const CUSTOM = { account: accountSection, themes: themesSection, pets: petsSection, obs: obsSection, advanced: advancedSection, updates: updatesSection, about: aboutSection };
+  const CUSTOM = { account: accountSection, themes: themesSection, pets: petsSection, history: historySection, obs: obsSection, advanced: advancedSection, updates: updatesSection, about: aboutSection };
 
   /* ---------------------------------------------------------------- navigation */
 

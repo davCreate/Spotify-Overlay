@@ -64,6 +64,8 @@
     scaler: $('#scaler'),
     carry: $('#carry'),
     pet: $('#pet'),
+    say: $('#petSay'),
+    lyric: $('.lyric'),
     card: $('#card'),
     content: $('.content'),
     artWrap: $('.art-wrap'),
@@ -242,8 +244,23 @@
     node.classList.add(prefix + value);
   }
 
+  /* Album color tone (Settings → Album art): vivid pushes colors away from gray, soft mixes them toward white. */
+  function toneColor(hex, tone) {
+    if (!hex || tone === 'natural' || !tone) return hex;
+    const n = parseInt(hex.slice(1), 16);
+    const c = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    const gray = (c[0] + c[1] + c[2]) / 3;
+    const out = tone === 'vivid'
+      ? c.map((v) => gray + (v - gray) * 1.35)
+      : c.map((v) => (gray + (v - gray) * 0.6) + (255 - (gray + (v - gray) * 0.6)) * 0.25);
+    return toHex(out[0], out[1], out[2]);
+  }
+
   function activeColors() {
-    if (theme.useAlbumColors && albumColors) return albumColors;
+    if (theme.useAlbumColors && albumColors) {
+      const tone = settings && settings.art ? settings.art.tone : 'natural';
+      return { accent: toneColor(albumColors.accent, tone), accent2: toneColor(albumColors.accent2, tone) };
+    }
     return { accent: theme.accent, accent2: theme.accent2 };
   }
 
@@ -271,6 +288,9 @@
 
     setVar('--scale', s.layout.scale);
     // Dynamic island: a pill at the top center that only shows the title until a song starts.
+    document.body.classList.toggle('show-lyrics', Boolean(s.lyrics && s.lyrics.enabled));
+    document.body.classList.toggle('prog-segments', s.progress.style === 'segments');
+    document.body.classList.toggle('prog-dots', s.progress.style === 'dots');
     const island = s.layout.placement === 'island';
     document.body.classList.toggle('island', island);
     if (!island) document.body.classList.remove('island-open');
@@ -529,6 +549,42 @@
     }, 4500);
   }
 
+  /* Synced lyrics: the last line whose time has passed. */
+  let lyrics = { id: null, lines: [] };
+  let lyricText = null;
+  function updateLyric(d, pos) {
+    if (!settings.lyrics || !settings.lyrics.enabled) return;
+    let text = '';
+    if (lyrics.id === d.track.id) {
+      for (const line of lyrics.lines) {
+        if (line.t <= pos + 150) text = line.text;
+        else break;
+      }
+    }
+    if (text !== lyricText) {
+      lyricText = text;
+      el.lyric.textContent = text;
+    }
+  }
+
+  /* Dynamic island: a click plays or pauses. */
+  el.card.addEventListener('click', () => {
+    if (document.body.classList.contains('island') && api.controlPlayback) api.controlPlayback('toggle');
+  });
+
+  /* Pet speech: a short line when it shows the card. */
+  function petSay(run) {
+    if (!settings.pet.speech) return;
+    const lines = PETS.SAY_LINES || [];
+    if (!lines.length) return;
+    const text = tr(lines[Math.floor(Math.random() * lines.length)]);
+    el.say.textContent = text;
+    el.say.style.left = (el.pet.offsetLeft + el.pet.offsetWidth / 2) + 'px';
+    el.say.style.top = (el.pet.offsetTop - 6) + 'px';
+    el.say.hidden = false;
+    run.timers.push(setTimeout(() => { el.say.hidden = true; }, 1800));
+  }
+
   function render() {
     const d = currentDisplay();
     current = d;
@@ -588,6 +644,7 @@
   function resetPetDom() {
     el.pet.hidden = true;
     el.pet.className = 'pet';
+    el.say.hidden = true;
     el.scaler.classList.remove('pet-hiding');
     el.scaler.querySelectorAll('.pet-sparkle, .pet-note').forEach((n) => n.remove());
   }
@@ -789,6 +846,7 @@
 
     // Show it off: lift the card with both arms up, sparkles around it.
     el.pet.className = 'pet showing' + facing;
+    petSay(run);
     const lift = petAnimate(run, el.carry, [{ translate: '0px 0px', scale: 1 }, { translate: '0px -12px', scale: 1.04 }], { duration: 320, easing: 'cubic-bezier(.2,.8,.3,1.2)', fill: 'forwards' });
     petSparkles(run);
     await petSleep(run, 950);
@@ -914,6 +972,7 @@
       el.fill.style.width = dur > 0 ? ((pos / dur) * 100).toFixed(2) + '%' : '0%';
       el.cur.textContent = fmtTime(pos);
       el.dur.textContent = fmtTime(dur);
+      updateLyric(d, pos);
     }
     el.scaler.classList.toggle('is-hidden', !computeVisible(d, now));
   }
@@ -968,6 +1027,12 @@
       ++transitionToken;
       const hadCard = shownKey !== null && !petRun && !el.scaler.classList.contains('is-hidden');
       petEntrance(current || currentDisplay(), hadCard);
+    });
+  }
+  if (api.onLyrics) {
+    api.onLyrics((data) => {
+      lyrics = data && Array.isArray(data.lines) ? data : { id: null, lines: [] };
+      lyricText = null;
     });
   }
   api.onPreview((v) => {

@@ -69,5 +69,7 @@ contextBridge.exposeInMainWorld('overlayAPI', {
   onPetPlay: on('pet-play'),
   onObsStatus: on('obs-status'),
   onShortcutStatus: on('shortcuts-status'),
-  onOverlayVisible: on('overlay-visible')
+  onOverlayVisible: on('overlay-visible'),
+  onLyrics: on('lyrics'),
+  controlPlayback: invoke('playback:control')
 });

@@ -111,6 +111,7 @@ function collectKeys() {
   // Theme catalog
   themes.PRESETS.forEach((t) => add(t.description));
   pets.PETS.forEach((p) => add(p.description));
+  pets.SAY_LINES.forEach((line) => add(line));
   themes.CATEGORIES.forEach((c) => { add(c.name); add(c.description); });
   Object.values(themes.EFFECTS).forEach((e) => add(e.label));
   Object.values(themes.FONTS).forEach((f) => add(f.label));

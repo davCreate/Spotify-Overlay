@@ -218,12 +218,15 @@ class SpotifyClient extends EventEmitter {
     return this.tokens.accessToken;
   }
 
-  async api(pathname, retried = false) {
+  async api(pathname, retried = false, method = 'GET') {
     const token = await this.getAccessToken();
-    const res = await fetch(API + pathname, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await fetch(API + pathname, { method, headers: { Authorization: `Bearer ${token}` } });
     if (res.status === 401 && !retried) {
       this.tokens.expiresAt = 0; // force refresh
-      return this.api(pathname, true);
+      return this.api(pathname, true, method);
+    }
+    if (res.status === 403 && method !== 'GET') {
+      throw Object.assign(new Error('Spotify refused the command. Log in again in Settings → Account to allow playback control.'), { status: 403 });
     }
     if (res.status === 429) {
       const wait = Number(res.headers.get('retry-after')) || 5;
@@ -269,6 +272,22 @@ class SpotifyClient extends EventEmitter {
     clearTimeout(this.timer);
     if (!this.running) return;
     this.timer = setTimeout(() => this.tick(), ms);
+  }
+
+  /** Play/pause, next or previous on the Web API (used when the desktop app is not the source). */
+  async control(action) {
+    if (!this.isConnected()) throw Object.assign(new Error('Not connected'), { notConnected: true });
+    const playing = this.lastState.isPlaying;
+    const map = {
+      toggle: playing ? ['/me/player/pause', 'PUT'] : ['/me/player/play', 'PUT'],
+      next: ['/me/player/next', 'POST'],
+      previous: ['/me/player/previous', 'POST']
+    };
+    const [pathname, method] = map[action] || [];
+    if (!pathname) return false;
+    await this.api(pathname, false, method);
+    this.pollNow();
+    return true;
   }
 
   pollNow() {

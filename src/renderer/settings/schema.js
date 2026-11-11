@@ -77,6 +77,7 @@
             { key: 'pet.side', label: 'Comes in from', type: 'select', options: opt(['auto', 'Nearest screen edge'], ['left', 'Left edge'], ['right', 'Right edge']) },
             { key: 'pet.size', label: 'Pet size', type: 'range', min: 0.5, max: 2, step: 0.05, percent: true },
             { key: 'pet.speed', label: 'Walking speed', type: 'range', min: 0.5, max: 2.5, step: 0.1, unit: '×' },
+            { key: 'pet.speech', label: 'Says a short line when it shows the card', type: 'toggle' },
             { key: 'pet.idle', label: 'Idles beside the card', type: 'toggle', help: 'After the wave the pet stays by the card: it looks around, yawns, stretches, taps its feet and falls asleep when the music is paused.' },
             { key: 'pet.lingerSeconds', label: 'Time to linger', type: 'range', min: 0, max: 30, step: 1, unit: 's' }
           ]
@@ -183,6 +184,7 @@
             { key: 'art.show', label: 'Show album art', type: 'toggle' },
             { key: 'art.size', label: 'Size', type: 'range', min: 32, max: 320, step: 2, unit: 'px', showIf: (s) => s.art.show },
             { key: 'art.shape', label: 'Shape', type: 'select', options: opt(['square', 'Square'], ['rounded', 'Rounded'], ['circle', 'Circle'], ['vinyl', 'Vinyl record']), showIf: (s) => s.art.show },
+            { key: 'art.tone', label: 'Album color tone', type: 'select', options: opt(['natural', 'Natural'], ['vivid', 'Vivid'], ['soft', 'Soft pastel']), help: 'Changes the colors taken from the album cover when Album Adaptive colors are on.' },
             { key: 'art.spin', label: 'Spin while playing', type: 'toggle', help: 'Works with Circle and Vinyl shapes.', showIf: (s) => s.art.show && (s.art.shape === 'circle' || s.art.shape === 'vinyl') },
             { key: 'art.pulse', label: 'Pulse to the beat', type: 'toggle', showIf: (s) => s.art.show },
             { key: 'art.shadow', label: 'Cover shadow', type: 'toggle', showIf: (s) => s.art.show }
@@ -208,6 +210,7 @@
           title: 'Style',
           fields: [
             { key: 'text.align', label: 'Alignment', type: 'select', options: opt(['left', 'Left'], ['center', 'Center'], ['right', 'Right']), help: 'The vertical layout is always centered.' },
+            { key: 'lyrics.enabled', label: 'Show synced lyrics', type: 'toggle', help: 'Shows the lyric line for the current moment under the title. Lyrics come from lrclib.net: the song title, artist, album and length are sent to that service to find them. Off by default.' },
             { key: 'text.titleSize', label: 'Title size', type: 'range', min: 8, max: 64, step: 1, unit: 'px' },
             { key: 'text.titleWeight', label: 'Title weight', type: 'range', min: 100, max: 900, step: 100 },
             { key: 'text.artistSize', label: 'Artist size', type: 'range', min: 8, max: 48, step: 1, unit: 'px' },
@@ -231,6 +234,7 @@
             { key: 'progress.showTime', label: 'Show elapsed / total time', type: 'toggle', showIf: (s) => s.progress.show },
             { key: 'progress.height', label: 'Thickness', type: 'range', min: 1, max: 16, step: 1, unit: 'px', showIf: (s) => s.progress.show },
             { key: 'progress.rounded', label: 'Rounded ends', type: 'toggle', showIf: (s) => s.progress.show },
+            { key: 'progress.style', label: 'Style', type: 'select', options: opt(['bar', 'Continuous bar'], ['segments', 'Segments'], ['dots', 'Dots']), showIf: (s) => s.progress.show },
             { key: 'progress.knob', label: 'Show position knob', type: 'toggle', showIf: (s) => s.progress.show }
           ]
         }
@@ -310,6 +314,21 @@
           fields: [
             { key: 'obs.enabled', label: 'Enable browser source', type: 'toggle' },
             { key: 'obs.port', label: 'Port', type: 'number', min: 1024, max: 65535, step: 1 }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'history',
+      title: 'History',
+      icon: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 4v5l4 2',
+      description: 'The last songs you played.',
+      custom: 'history',
+      groups: [
+        {
+          title: 'Recently played',
+          fields: [
+            { key: 'history.enabled', label: 'Remember recently played songs', type: 'toggle', help: 'Keeps the last 10 different songs on this computer. Nothing is sent anywhere.' }
           ]
         }
       ]

@@ -66,6 +66,8 @@ const ENUMS = {
   'animation.trackChange': ['none', 'fade', 'slide', 'zoom', 'flip', 'blur'],
   'animation.idle': ['none', 'float', 'breathe'],
   'layout.placement': ['free', 'top-left', 'top-center', 'top-right', 'middle-left', 'center', 'middle-right', 'bottom-left', 'bottom-center', 'bottom-right', 'island'],
+  'progress.style': ['bar', 'segments', 'dots'],
+  'art.tone': ['natural', 'vivid', 'soft'],
   'pet.type': ['claude'],
   'pet.side': ['auto', 'left', 'right'],
   'pet.color': ['orange', 'blue', 'green', 'purple', 'pink', 'graphite'],
@@ -107,6 +109,10 @@ class SettingsStore extends EventEmitter {
     for (const [p, allowed] of Object.entries(ENUMS)) {
       if (!allowed.includes(getPath(merged, p))) setPath(merged, p, getPath(DEFAULT_SETTINGS, p));
     }
+    merged.history.items = (Array.isArray(merged.history.items) ? merged.history.items : [])
+      .filter((i) => i && typeof i.title === 'string')
+      .slice(0, 10)
+      .map((i) => ({ title: i.title.slice(0, 120), artist: String(i.artist || '').slice(0, 120), at: Number(i.at) || 0 }));
     merged.themeOverrides = sanitizeThemeValues(merged.themeOverrides);
     merged.customThemes = (Array.isArray(merged.customThemes) ? merged.customThemes : [])
       .filter((t) => t && typeof t.id === 'string' && t.id.startsWith('user-') && typeof t.name === 'string')

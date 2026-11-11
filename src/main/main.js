@@ -8,6 +8,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const { spawn } = require('child_process');
 const {
   app,
   BrowserWindow,
@@ -28,6 +29,7 @@ const { SettingsStore } = require('./store');
 const { TokenStore } = require('./token-store');
 const { SpotifyClient } = require('./spotify-client');
 const { WindowsMediaSource } = require('./windows-media');
+const { fetchLyrics } = require('./lyrics');
 const { ObsServer } = require('./obs-server');
 const { Updater } = require('./updater');
 const { redirectUri } = require('./spotify-auth');
@@ -321,10 +323,77 @@ function placeOverlay() {
 
 function applyLock() {
   if (!overlayWin || overlayWin.isDestroyed()) return;
-  const locked = settings().layout.locked;
+  const layout = settings().layout;
+  // The island is a small control: it stays clickable (play/pause) and never takes focus.
+  const island = layout.placement === 'island';
+  const locked = layout.locked && !island;
   // Locked = fully click-through so it never blocks games or apps underneath.
   overlayWin.setIgnoreMouseEvents(locked, locked ? { forward: true } : undefined);
-  overlayWin.setFocusable(!locked);
+  overlayWin.setFocusable(!locked && !island);
+}
+
+/* ------------------------------------------------------------------ playback control, lyrics, history */
+
+const CONTROL_ACTIONS = new Set(['toggle', 'next', 'previous']);
+
+/** Windows media controls for the Spotify desktop app (a short-lived PowerShell command). */
+function runSmtcControl(action) {
+  let script;
+  try {
+    script = fs.readFileSync(path.join(__dirname, 'windows-media-control.ps1'), 'utf8');
+  } catch (err) {
+    console.warn('[control] Could not read script:', err.message);
+    return false;
+  }
+  const encoded = Buffer.from(`$action = '${action}'
+${script}`, 'utf16le').toString('base64');
+  const proc = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', encoded], {
+    windowsHide: true,
+    stdio: 'ignore'
+  });
+  proc.on('error', () => {});
+  return true;
+}
+
+/** Play/pause, next or previous. Desktop app first (no Web API call), else the Web API. */
+async function controlPlayback(action) {
+  if (!CONTROL_ACTIONS.has(action)) return false;
+  if (process.platform === 'win32' && localMedia && localMedia.current()) return runSmtcControl(action);
+  try {
+    return await spotify.control(action);
+  } catch (err) {
+    console.warn('[control]', err.message);
+    return false;
+  }
+}
+
+let lyricsTrackId = null;
+/** Sends the lyrics of the current track to the overlay (only while lyrics are switched on). */
+function sendLyrics(state) {
+  const t = state && state.track;
+  if (!t || !settings().lyrics.enabled) {
+    lyricsTrackId = null;
+    return;
+  }
+  if (t.id === lyricsTrackId) return;
+  lyricsTrackId = t.id;
+  fetchLyrics({ id: t.id, title: t.title, artist: t.artists, album: t.album, durationMs: t.durationMs }).then((lines) => {
+    if (lyricsTrackId === t.id) sendTo(overlayWin, 'lyrics', { id: t.id, lines });
+  });
+}
+
+let historyTrackId = null;
+/** Keeps the last 10 different songs (Settings → History). */
+function recordHistory(state) {
+  const t = state && state.track;
+  if (!t || t.id === historyTrackId) return;
+  historyTrackId = t.id;
+  const h = settings().history;
+  if (!h || !h.enabled) return;
+  const items = [{ title: t.title, artist: t.artists, at: Date.now() }]
+    .concat(h.items.filter((i) => i.title !== t.title || i.artist !== t.artists))
+    .slice(0, 10);
+  store.set('history.items', items);
 }
 
 function setOverlayVisible(visible) {
@@ -605,6 +674,7 @@ function registerIpc() {
   handle('overlay:visible-get', () => overlayVisible);
   handle('overlay:visible-set', (v) => setOverlayVisible(Boolean(v)));
   handle('overlay:pet-stage', (side) => stagePet(side));
+  handle('playback:control', (action) => controlPlayback(String(action)));
   handle('overlay:pet-unstage', () => unstagePet());
   handle('pet:play', () => sendTo(overlayWin, 'pet-play', true));
   handle('overlay:reset-position', () => {
@@ -679,7 +749,11 @@ async function init() {
     }
   });
 
-  spotify.on('playback', (state) => broadcast('playback', state));
+  spotify.on('playback', (state) => {
+    broadcast('playback', state);
+    recordHistory(state);
+    sendLyrics(state);
+  });
   spotify.on('auth', () => broadcast('auth', authStatus()));
 
   store.on('change', (keys, s) => {
@@ -688,7 +762,14 @@ async function init() {
     if (!all && keys.every((k) => k.startsWith('window.'))) return;
     broadcast('settings', s);
     const touched = (prefix) => all || keys.some((k) => k === prefix || k.startsWith(prefix + '.'));
-    if (touched('layout.placement')) placeOverlay();
+    if (touched('layout.placement')) {
+      placeOverlay();
+      applyLock();
+    }
+    if (touched('lyrics')) {
+      lyricsTrackId = null;
+      sendLyrics(spotify.lastState);
+    }
     if (touched('layout.locked')) {
       applyLock();
       updateTrayMenu();

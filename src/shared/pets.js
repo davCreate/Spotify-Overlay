@@ -104,5 +104,8 @@
     return PETS.find((p) => p.id === id) || PETS[0];
   }
 
-  return { PETS, PALETTES, ACCESSORIES, findPet };
+  /* Short lines the pet says when it shows the card (translated in the app). */
+  const SAY_LINES = ['Ta-da!', 'Here we go!', 'Ooh, new song!', 'Feel this one!', 'Turn it up!'];
+
+  return { PETS, PALETTES, ACCESSORIES, SAY_LINES, findPet };
 });
