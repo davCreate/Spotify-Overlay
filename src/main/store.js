@@ -22,6 +22,14 @@ const { isValidThemeValue, sanitizeThemeValues, findTheme } = require('../shared
 
 const MAX_CUSTOM_THEMES = 50;
 
+/** Recently played songs: at most 10 entries with plain text fields. */
+function sanitizeHistory(items) {
+  return (Array.isArray(items) ? items : [])
+    .filter((i) => i && typeof i.title === 'string')
+    .slice(0, 10)
+    .map((i) => ({ title: i.title.slice(0, 120), artist: String(i.artist || '').slice(0, 120), at: Number(i.at) || 0 }));
+}
+
 /** Numeric limits enforced on the main side (the UI also enforces them). */
 const NUMBER_LIMITS = {
   'account.redirectPort': [1024, 65535],
@@ -109,10 +117,7 @@ class SettingsStore extends EventEmitter {
     for (const [p, allowed] of Object.entries(ENUMS)) {
       if (!allowed.includes(getPath(merged, p))) setPath(merged, p, getPath(DEFAULT_SETTINGS, p));
     }
-    merged.history.items = (Array.isArray(merged.history.items) ? merged.history.items : [])
-      .filter((i) => i && typeof i.title === 'string')
-      .slice(0, 10)
-      .map((i) => ({ title: i.title.slice(0, 120), artist: String(i.artist || '').slice(0, 120), at: Number(i.at) || 0 }));
+    merged.history.items = sanitizeHistory(merged.history.items);
     merged.themeOverrides = sanitizeThemeValues(merged.themeOverrides);
     merged.customThemes = (Array.isArray(merged.customThemes) ? merged.customThemes : [])
       .filter((t) => t && typeof t.id === 'string' && t.id.startsWith('user-') && typeof t.name === 'string')
@@ -132,6 +137,7 @@ class SettingsStore extends EventEmitter {
     if (typeof p !== 'string' || !hasPath(DEFAULT_SETTINGS, p)) throw new Error(`Unknown setting: ${p}`);
     const top = p.split('.')[0];
     if (OPEN_KEYS.includes(top) || top === 'version') throw new Error(`Setting ${p} cannot be set directly`);
+    if (p === 'history.items') return sanitizeHistory(value);
     const def = getPath(DEFAULT_SETTINGS, p);
     if (def !== null && typeof def === 'object') throw new Error(`Setting ${p} is a group`);
     if (def === null) {

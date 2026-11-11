@@ -17,3 +17,15 @@ test('empty or missing lyrics give no lines', () => {
   assert.deepEqual(parseLrc(null), []);
   assert.deepEqual(parseLrc(''), []);
 });
+
+test('history items can be set and cleared through the store', () => {
+  const os = require('os');
+  const fs = require('fs');
+  const path = require('path');
+  const { SettingsStore } = require('../src/main/store');
+  const store = new SettingsStore(fs.mkdtempSync(path.join(os.tmpdir(), 'so-hist-')));
+  store.set('history.items', [{ title: 'A', artist: 'B', at: 1 }]);
+  assert.equal(store.get().history.items.length, 1);
+  store.set('history.items', []);
+  assert.equal(store.get().history.items.length, 0);
+});
