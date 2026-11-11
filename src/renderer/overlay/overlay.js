@@ -478,8 +478,9 @@
 
   async function transitionTo(d) {
     if (petWanted(d)) {
+      const hadCard = shownKey !== null && !petRun && !el.scaler.classList.contains('is-hidden') && !el.scaler.classList.contains('pet-hiding');
       ++transitionToken;
-      petEntrance(d);
+      petEntrance(d, hadCard);
       return;
     }
     abortPet();
@@ -538,6 +539,7 @@
    * duration (main.js stagePet); in OBS the pet walks in from the edge of the browser source.
    */
   const PETS = window.SO_PETS;
+  const PET_FADE_MS = 240; // card fade while the window is resized after a pet run
   let petRun = null;
   let petSvgFor = null;
 
@@ -567,26 +569,35 @@
     el.pet.hidden = true;
     el.pet.className = 'pet';
     el.scaler.classList.remove('pet-hiding');
-    el.scaler.querySelectorAll('.pet-sparkle').forEach((n) => n.remove());
+    el.scaler.querySelectorAll('.pet-sparkle, .pet-note').forEach((n) => n.remove());
     setVar('--stage-offset', '0px');
   }
 
+  /*
+   * Leaving the pet animation. Shrinking the window back to the card would shift the card for
+   * a frame (the "blink"). So the card fades out first, the window shrinks while the card is
+   * invisible, then the card fades back in at its real place.
+   */
   function finishPet(run) {
     el.pet.hidden = true;
     run.anims.forEach((a) => a.cancel());
     run.timers.forEach(clearTimeout);
     const staged = run.staged;
     run.staged = false;
-    if (staged && api.petUnstage) {
-      // Shrink the window back first, then drop the content offset right after.
-      api.petUnstage().catch(() => {}).then(() => {
-        if (!petRun) resetPetDom();
-        requestResize();
-      });
-    } else {
+    if (!staged || !api.petUnstage) {
       if (!petRun) resetPetDom();
       requestResize();
+      return;
     }
+    el.scaler.classList.add('pet-hiding');
+    setTimeout(() => {
+      if (petRun) return; // a new pet animation took over the window
+      api.petUnstage().catch(() => {}).then(() => {
+        if (petRun) return;
+        resetPetDom();
+        requestResize();
+      });
+    }, PET_FADE_MS);
   }
 
   function abortPet() {
@@ -620,7 +631,32 @@
     }
   }
 
-  async function petEntrance(d) {
+  /* Music notes that float up from the pet while it dances. */
+  function petNotes(run) {
+    const glyphs = ['♪', '♫', '♬'];
+    for (let i = 0; i < glyphs.length; i++) {
+      const n = document.createElement('div');
+      n.className = 'pet-note';
+      n.textContent = glyphs[i];
+      n.style.left = (el.pet.offsetLeft + el.pet.offsetWidth * 0.55 + i * 10) + 'px';
+      n.style.top = (el.pet.offsetTop + el.pet.offsetHeight * 0.1) + 'px';
+      el.scaler.appendChild(n);
+      const a = petAnimate(run, n, [
+        { transform: 'translate(0px, 0px)', opacity: 0 },
+        { opacity: 1, offset: 0.2 },
+        { transform: 'translate(14px, -34px)', opacity: 0 }
+      ], { duration: 1100, delay: i * 260, easing: 'ease-out', fill: 'forwards' });
+      a.finished.then(() => n.remove(), () => n.remove());
+    }
+  }
+
+  /*
+   * Pet sequence for a track. If a card is already on screen, the pet walks in, takes it and
+   * carries it off screen; the new song is put on the card while it is out of sight; the pet
+   * brings it back, lifts it up to show it, sets it down, dances, waves and walks away.
+   * Without a card on screen the pet simply walks in with the new one.
+   */
+  async function petEntrance(d, hadCard) {
     abortPet();
     const run = { anims: [], timers: [], staged: false };
     petRun = run;
@@ -628,67 +664,111 @@
     const p = settings.pet;
     const pet = PETS.findPet(p.type);
     const scale = settings.layout.scale;
-
-    // Hide the card, put the new song on it and wait for the cover.
-    el.content.getAnimations().forEach((a) => a.cancel());
-    el.scaler.classList.add('pet-hiding');
-    fillContent(d);
-    const url = d.kind === 'track' && isSafeImageUrl(d.track.artUrl) ? d.track.artUrl : null;
-    if (url) await loadImage(url, 1500);
-    if (!alive()) return;
-
-    // Make room up to the screen edge.
-    let stage = null;
-    if (api.petStage) {
-      run.staged = true;
-      stage = await api.petStage(p.side).catch(() => null);
-      if (!alive()) return;
-      if (!stage) run.staged = false;
-    }
-    if (!stage) {
-      const r = el.scaler.getBoundingClientRect();
-      const side = p.side === 'left' || p.side === 'right' ? p.side : (r.left + r.width / 2 <= window.innerWidth / 2 ? 'left' : 'right');
-      stage = { side, offset: 0, distance: side === 'left' ? r.left : window.innerWidth - r.right };
-    }
-    setVar('--stage-offset', stage.offset + 'px');
-    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-    if (!alive()) return;
-
-    // Place the pet beside the card, on the side it comes from, holding the card's edge.
-    ensurePetSvg();
-    const fromLeft = stage.side === 'left';
-    const facing = fromLeft ? '' : ' facing-left';
-    el.pet.style.setProperty('--pet-size', p.size);
-    el.pet.style.translate = '';
-    el.pet.hidden = false;
-    el.pet.className = 'pet';
-    const petW = el.pet.offsetWidth;
-    const petH = el.pet.offsetHeight;
-    const cardW = el.card.offsetWidth;
-    const cardH = el.card.offsetHeight;
-    const reach = pet.armReach;
-    el.pet.style.left = (fromLeft ? -petW * reach : cardW - petW * (1 - reach)) + 'px';
-    el.pet.style.top = (cardH - petH) + 'px';
-
-    // Walk in from off screen (window pixels: #scaler's translate is applied before its scale).
-    const cardLeft = margin + stage.offset;
-    const startX = fromLeft
-      ? -(cardLeft + cardW * scale + 12)
-      : window.innerWidth - cardLeft + petW * scale * (1 - reach) + 12;
     const speed = p.speed || 1;
-    const dur = clamp(Math.abs(startX) / (290 * speed), 0.9, 4.6) * 1000;
-    // Ground covered per gait cycle (two steps). Short enough that the feet look planted
-    // instead of sliding; the cycle then speeds up or slows down with the walking speed.
-    const stride = petW * scale * 0.46;
+    const reach = pet.armReach;
+    const url = d.kind === 'track' && isSafeImageUrl(d.track.artUrl) ? d.track.artUrl : null;
+    let stride = 1; // ground covered per gait cycle, in px
     const stepFor = (px, ms) => clamp(stride / (px / ms), 190, 520).toFixed(0) + 'ms';
-    el.pet.style.setProperty('--pet-step', stepFor(Math.abs(startX), dur));
-    el.pet.className = 'pet walking carrying' + facing;
-    const walkIn = petAnimate(run, el.scaler, [{ translate: startX + 'px 0px' }, { translate: '0px 0px' }], { duration: dur, easing: 'cubic-bezier(.3,.05,.45,1)' });
-    const bob = petAnimate(run, el.carry, [{ translate: '0px 0px' }, { translate: '0px -4px' }, { translate: '0px 0px' }], { duration: parseFloat(stepFor(Math.abs(startX), dur)) / 2, iterations: Infinity });
-    el.scaler.classList.remove('pet-hiding');
-    await walkIn.finished.catch(() => {});
-    if (!alive()) return;
-    bob.cancel();
+    let st = null;
+    let fromLeft = true;
+    let facing = '';
+
+    // Stretch the window to the screen edge; the card stays where it is.
+    const stage = async () => {
+      let s = null;
+      if (api.petStage) {
+        run.staged = true;
+        s = await api.petStage(p.side).catch(() => null);
+        if (!alive()) return;
+        if (!s) run.staged = false;
+      }
+      if (!s) {
+        const r = el.scaler.getBoundingClientRect();
+        const side = p.side === 'left' || p.side === 'right' ? p.side : (r.left + r.width / 2 <= window.innerWidth / 2 ? 'left' : 'right');
+        s = { side, offset: 0, distance: side === 'left' ? r.left : window.innerWidth - r.right };
+      }
+      st = s;
+      setVar('--stage-offset', s.offset + 'px');
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    };
+
+    // Pet markup and facing for the side it comes from.
+    const setup = () => {
+      fromLeft = st.side === 'left';
+      facing = fromLeft ? '' : ' facing-left';
+      ensurePetSvg();
+      el.pet.style.setProperty('--pet-size', p.size);
+      el.pet.style.translate = '';
+      el.pet.hidden = false;
+      el.pet.className = 'pet';
+      stride = el.pet.offsetWidth * scale * 0.46;
+    };
+    // Pet beside the card, on the side it comes from, holding the card's edge.
+    const place = () => {
+      const petW = el.pet.offsetWidth;
+      const cardW = el.card.offsetWidth;
+      el.pet.style.left = (fromLeft ? -petW * reach : cardW - petW * (1 - reach)) + 'px';
+      el.pet.style.top = (el.card.offsetHeight - el.pet.offsetHeight) + 'px';
+    };
+    // #scaler offset that puts the card (and the pet) just beyond the screen edge.
+    const offscreenX = () => {
+      const petW = el.pet.offsetWidth;
+      const cardLeft = margin + st.offset;
+      return fromLeft
+        ? -(cardLeft + el.card.offsetWidth * scale + 12)
+        : window.innerWidth - cardLeft + petW * scale * (1 - reach) + 12;
+    };
+    // Walk the card (and the pet inside #scaler) from fromX to toX.
+    const glide = (fromX, toX, easing, fill) => {
+      const dist = Math.abs(toX - fromX);
+      const dur = clamp(dist / (290 * speed), 0.9, 4.6) * 1000;
+      el.pet.style.setProperty('--pet-step', stepFor(dist, dur));
+      const anim = petAnimate(run, el.scaler, [{ translate: fromX + 'px 0px' }, { translate: toX + 'px 0px' }], { duration: dur, easing, fill });
+      const bob = petAnimate(run, el.carry, [{ translate: '0px 0px' }, { translate: '0px -4px' }, { translate: '0px 0px' }], { duration: parseFloat(stepFor(dist, dur)) / 2, iterations: Infinity });
+      return { anim, bob, done: anim.finished.catch(() => {}) };
+    };
+
+    if (hadCard) {
+      // The old card is still up: the pet walks in, takes it and carries it off screen.
+      await stage();
+      if (!alive()) return;
+      setup();
+      place();
+      el.pet.className = 'pet walking carrying backing' + facing;
+      const exit = glide(0, offscreenX(), 'cubic-bezier(.4,0,.7,1)', 'forwards');
+      await exit.done;
+      if (!alive()) return;
+      // Out of sight: put the new song on the card and wait for the cover.
+      fillContent(d);
+      if (url) await loadImage(url, 1500);
+      if (!alive()) return;
+      place();
+      el.pet.className = 'pet walking carrying' + facing;
+      // Start the return walk before the exit is cancelled, so the card never flashes back.
+      const enter = glide(offscreenX(), 0, 'cubic-bezier(.3,.05,.45,1)', 'none');
+      exit.anim.cancel();
+      exit.bob.cancel();
+      await enter.done;
+      if (!alive()) return;
+      enter.bob.cancel();
+    } else {
+      // Hide the card, put the new song on it and wait for the cover.
+      el.content.getAnimations().forEach((a) => a.cancel());
+      el.scaler.classList.add('pet-hiding');
+      fillContent(d);
+      if (url) await loadImage(url, 1500);
+      if (!alive()) return;
+      await stage();
+      if (!alive()) return;
+      setup();
+      place();
+      el.pet.className = 'pet walking carrying' + facing;
+      el.scaler.classList.remove('pet-hiding');
+      const enter = glide(offscreenX(), 0, 'cubic-bezier(.3,.05,.45,1)', 'none');
+      await enter.done;
+      if (!alive()) return;
+      enter.bob.cancel();
+    }
 
     // Show it off: lift the card with both arms up, sparkles around it.
     el.pet.className = 'pet showing' + facing;
@@ -708,9 +788,15 @@
     await petSleep(run, 860);
     if (!alive()) return;
 
+    // Dance to the song.
+    el.pet.className = 'pet dancing' + facing;
+    petNotes(run);
+    await petSleep(run, 1500);
+    if (!alive()) return;
+
     // Wave goodbye, turn around and walk back out.
     el.pet.className = 'pet waving' + facing;
-    await petSleep(run, 950);
+    await petSleep(run, 900);
     if (!alive()) return;
     const pr = el.pet.getBoundingClientRect();
     const dx = fromLeft ? -(pr.right + 12) : window.innerWidth - pr.left + 12;
@@ -794,7 +880,8 @@
     // "Play the animation" button in Settings → Pets.
     api.onPetPlay(() => {
       ++transitionToken;
-      petEntrance(current || currentDisplay());
+      const hadCard = shownKey !== null && !petRun && !el.scaler.classList.contains('is-hidden');
+      petEntrance(current || currentDisplay(), hadCard);
     });
   }
   api.onPreview((v) => {

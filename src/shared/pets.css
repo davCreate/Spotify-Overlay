@@ -108,6 +108,35 @@
 @keyframes pet-hop { 0%, 100% { translate: 0 0; } 45% { translate: 0 -11px; } }
 @keyframes pet-hop-shadow { 0%, 100% { scale: 1; opacity: 0.28; } 45% { scale: 0.6; opacity: 0.12; } }
 
+/* Walking backwards while dragging the card off screen: the gait runs in reverse. */
+.pet.walking.backing .pet-leg-a, .pet.walking.backing .pet-leg-b, .pet.walking.backing .pet-arm-back { animation-direction: reverse; }
+
+/* Dancing to the song: body sways, arms swap sides, legs bounce, sparkle spins. */
+.pet.dancing .pet-body { transform-box: view-box; transform-origin: 39px 54px; animation: pet-dance-body 640ms ease-in-out infinite; }
+.pet.dancing .pet-arm-front { animation: pet-dance-front 640ms ease-in-out infinite; }
+.pet.dancing .pet-arm-back { animation: pet-dance-back 640ms ease-in-out infinite; }
+.pet.dancing .pet-legs { animation: pet-legs-dip 320ms ease-in-out infinite; }
+.pet.dancing .pet-spark { animation: pet-spin 900ms linear infinite; }
+.pet.dancing .pet-mouth { opacity: 1; }
+.pet.dancing .pet-shadow { animation: pet-walk-shadow 640ms ease-in-out infinite; }
+@keyframes pet-dance-body {
+  0%, 100% { translate: 0 0; rotate: -7deg; scale: 1 1; }
+  50% { translate: 0 -3px; rotate: 7deg; scale: 1.02 0.98; }
+}
+@keyframes pet-dance-front { 0%, 100% { rotate: -70deg; } 50% { rotate: 24deg; } }
+@keyframes pet-dance-back { 0%, 100% { rotate: 70deg; } 50% { rotate: -24deg; } }
+
+/* Music notes floating up from the dancing pet (added by overlay.js). */
+.pet-note {
+  position: absolute;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--spark, #ffd9a8);
+  text-shadow: 0 0 6px var(--spark, #ffd9a8);
+  pointer-events: none;
+  opacity: 0;
+}
+
 /* Waving goodbye. */
 .pet.waving .pet-arm-front { animation: pet-wave 300ms ease-in-out infinite alternate; }
 .pet.waving .pet-mouth { opacity: 1; }

@@ -40,7 +40,8 @@ Free and open source. It works on Windows, macOS and Linux, and also as an OBS b
 - **19 visual effects**: 3D tilt, 3D extruded block, 3D stacked cards, soft 3D (neumorphism), neon tube, holographic foil, aurora, shimmer, CRT scanlines, pixel/8-bit, sticker, and seven animated 3D effects: **3D orbit**, **3D hover**, **3D box** (real top, bottom and side faces), **3D parallax** (cover and text at different depths), **hologram projector**, **beat pulse 3D** (jumps toward you on the beat) and **hanging sign**. Any effect can be combined with any colors.
 
 **Pets**
-- Turn on a pet in Settings → Pets and it delivers every new song: it walks in from the edge of the screen carrying the overlay, shows it off with sparkles, puts it in its place, waves and walks away. The first pet is **Claude**, a little orange helper. You can pick the edge it comes from, its size and walking speed, and play the animation from Settings. It also works in the OBS browser source.
+- Turn on a pet in Settings → Pets and it delivers every new song. When a song changes, the pet walks in, **takes the old card off screen**, brings the new one back, shows it off with sparkles, sets it down, **dances to the music** with floating notes, waves and walks away. The card never blinks while it moves.
+- The first pet is **Claude**, a little orange helper with a walk cycle, blinking eyes and a twinkling antenna. You can pick the edge it comes from, its size and walking speed, and play the animation from Settings. It also works in the OBS browser source.
 - Background styles: solid, gradient, glass, **blurred album art**, or fully transparent.
 - **Album-adaptive colors**: accent colors are extracted from each cover.
 - Edit every color, border, shadow, glow, font and effect. Save your own themes, and export or import them as JSON to share.
@@ -280,13 +281,15 @@ Your personal Spotify app runs in Spotify's *Development mode*. You are its owne
 
 ## 🚧 Known limitations and coming soon
 
-This is the first release, and **more updates will be posted soon**. Current limitations:
+Current limitations:
 
 - The builds are not code-signed, so Windows and macOS show a warning on first launch (see [Installation](#-installation)).
 - The macOS build supports Apple Silicon only. Intel Macs are not supported yet.
 - The real-audio visualizer works on Windows only. macOS, Linux and OBS use the simulated visualizer.
 
-New versions show up in the app itself (Settings → Updates). You can also watch or star the repository to get notified about new releases. Ideas and bug reports are welcome on the [Issues page](https://github.com/davCreate/Spotify-Overlay/issues).
+Planned: more pets, and pet idle poses while music is paused.
+
+New versions show up in the app itself (Settings → Updates). Star or watch the repository to get notified about new releases. Ideas and bug reports are welcome on the [Issues page](https://github.com/davCreate/Spotify-Overlay/issues).
 
 ---
 

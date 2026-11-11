@@ -280,7 +280,7 @@ body.unlocked .edit-hint { display: block; }
 /* ---------------------------------------------------------------- theme effects (theme.effect) */
 
 #scaler, #carry { perspective: 900px; }
-#carry { position: relative; }
+#carry { position: relative; transition: opacity 220ms ease; }
 #scaler.pet-hiding #carry { opacity: 0; }
 .viz-bg-slot { z-index: 1; }
 .clip::after { content: none; }

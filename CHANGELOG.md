@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.0.7] - 2026-11-11
+
+### Added
+- The pet now hands over the card on every song change. If a card is on screen, it walks in, takes it and carries it off screen. The new song is put on the card out of sight, and the pet brings it back with a smooth walk.
+- Dance step: after setting the card down, the pet sways, swaps its arms to the beat and floats music notes up from its head before it waves goodbye.
+- Walking backwards while it drags the card away: the legs run in reverse.
+
+### Fixed
+- The overlay no longer blinks when the pet leaves the screen. The card now fades out while the window shrinks back and fades in at its real place.
+
+### Changed
+- Pet sequence is now: take the old card, bring the new one, show it off, set it down, dance, wave, walk away.
+- Repository README refreshed: clearer pet section, up-to-date limitations and the project status.
+
 ## [1.0.6] - 2026-11-11
 
 ### Fixed
