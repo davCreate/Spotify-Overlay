@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.0.8] - 2026-11-11
+
+### Added
+- Turn the pet on or off from the tray menu ("Pet" checkbox). The Settings toggle still works.
+
+### Changed
+- The pet is redrawn as a blocky pixel mascot with stubby arms and legs and big black eyes, in the style of Clawd On Desk.
+
+### Fixed
+- The overlay no longer blinks when the pet walks off screen. The window now stays stretched between pet runs and is released only when the pet is turned off or the overlay is unlocked.
+
 ## [1.0.7] - 2026-11-11
 
 ### Added
