@@ -27,21 +27,70 @@
 @keyframes pet-antenna { 0%, 100% { rotate: -6deg; } 50% { rotate: 6deg; } }
 @keyframes pet-breathe { 0%, 100% { translate: 0 0; } 50% { translate: 0 -1px; } }
 
-/* Walking: legs swing in pairs, the body bobs twice per cycle, the back arm swings. */
-.pet.walking .pet-leg-a { animation: pet-leg-a var(--pet-step) ease-in-out infinite; }
-.pet.walking .pet-leg-b { animation: pet-leg-b var(--pet-step) ease-in-out infinite; }
-.pet.walking .pet-body { animation: pet-bob calc(var(--pet-step) / 2) ease-in-out infinite alternate; }
-.pet.walking .pet-shadow { animation: pet-shadow calc(var(--pet-step) / 2) ease-in-out infinite alternate; }
-.pet.walking .pet-arm-back { animation: pet-arm-swing var(--pet-step) ease-in-out infinite; }
-.pet.walking:not(.carrying) .pet-arm-front { animation: pet-arm-swing var(--pet-step) ease-in-out infinite reverse; }
-@keyframes pet-leg-a { 0%, 100% { rotate: 22deg; } 50% { rotate: -22deg; } }
-@keyframes pet-leg-b { 0%, 100% { rotate: -22deg; } 50% { rotate: 22deg; } }
-@keyframes pet-bob { from { translate: 0 0; } to { translate: 0 -2.5px; } }
-@keyframes pet-shadow { from { scale: 1; } to { scale: 0.86; } }
-@keyframes pet-arm-swing { 0%, 100% { rotate: -40deg; } 50% { rotate: -10deg; } }
+/*
+ * Walking. One cycle (--pet-step) = two steps. Each leg pair has a swing phase (foot lifts,
+ * bends and moves forward) and a stance phase (foot planted, pushes back); pair B runs half a
+ * cycle behind pair A. The body dips on each foot strike, squashes a little, leans into the
+ * walk and rolls side to side; arms swing against the legs; the antenna lags behind (follow
+ * through) and small dust puffs kick up behind the feet.
+ */
+.pet.walking .pet-leg-a { animation: pet-gait var(--pet-step) linear infinite; }
+.pet.walking .pet-leg-b { animation: pet-gait var(--pet-step) linear infinite; animation-delay: calc(var(--pet-step) / -2); }
+.pet.walking .pet-legs { animation: pet-legs-dip calc(var(--pet-step) / 2) ease-in-out infinite; }
+.pet.walking .pet-body { transform-box: view-box; transform-origin: 39px 54px; animation: pet-walk-body var(--pet-step) ease-in-out infinite; }
+.pet.walking .pet-antenna { animation: pet-antenna-lag var(--pet-step) ease-in-out infinite; }
+.pet.walking .pet-spark { animation: pet-spark-walk var(--pet-step) ease-in-out infinite; }
+.pet.walking .pet-shadow { animation: pet-walk-shadow calc(var(--pet-step) / 2) ease-in-out infinite; }
+.pet.walking .pet-arm-back { animation: pet-swing-back var(--pet-step) ease-in-out infinite; }
+.pet.walking:not(.carrying) .pet-arm-front { animation: pet-swing-front var(--pet-step) ease-in-out infinite; }
+.pet.walking .pet-dust { animation: pet-dust var(--pet-step) ease-out infinite; }
+.pet.walking .pet-dust-b { animation-delay: calc(var(--pet-step) / -2); }
 
-/* Carrying: front arm stretched out holding the card. */
+/* Leg: 0-45% swing (lift, bend, reach forward), 45-100% stance (planted, sweep back). */
+@keyframes pet-gait {
+  0% { rotate: 21deg; translate: 0 0; scale: 1 1; }
+  12% { rotate: 12deg; translate: 0 -3px; scale: 1 0.86; }
+  28% { rotate: -10deg; translate: 0 -2.6px; scale: 1 0.88; }
+  45% { rotate: -21deg; translate: 0 0; scale: 1 1; }
+  52% { rotate: -17deg; translate: 0 0.5px; scale: 1 0.96; }
+  100% { rotate: 21deg; translate: 0 0; scale: 1 1; }
+}
+@keyframes pet-legs-dip { 0%, 100% { translate: 0 0; } 15% { translate: 0 0.8px; } 60% { translate: 0 -0.8px; } }
+@keyframes pet-walk-body {
+  0% { translate: 0 0.8px; rotate: 3deg; scale: 1.03 0.97; }
+  20% { translate: 0 -1.8px; rotate: 4deg; scale: 0.985 1.018; }
+  50% { translate: 0 0.8px; rotate: 3deg; scale: 1.03 0.97; }
+  70% { translate: 0 -1.8px; rotate: 2deg; scale: 0.985 1.018; }
+  100% { translate: 0 0.8px; rotate: 3deg; scale: 1.03 0.97; }
+}
+@keyframes pet-antenna-lag {
+  0%, 50%, 100% { rotate: -14deg; }
+  25%, 75% { rotate: -4deg; }
+}
+@keyframes pet-spark-walk { 0%, 100% { scale: 1; rotate: 0deg; } 50% { scale: 0.85; rotate: 90deg; } }
+@keyframes pet-walk-shadow { 0%, 100% { scale: 1.04 1; opacity: 0.3; } 40% { scale: 0.86 1; opacity: 0.2; } }
+@keyframes pet-swing-back { 0%, 100% { rotate: -52deg; } 50% { rotate: -8deg; } }
+@keyframes pet-swing-front { 0%, 100% { rotate: 10deg; } 50% { rotate: 48deg; } }
+
+/* Dust puffs behind the feet (hidden unless walking). */
+.pet-dust { opacity: 0; transform-box: fill-box; transform-origin: 50% 50%; }
+@keyframes pet-dust {
+  0%, 40% { opacity: 0; translate: 0 0; scale: 0.3; }
+  48% { opacity: 0.35; translate: -2px -1px; scale: 0.7; }
+  80% { opacity: 0; translate: -9px -5px; scale: 1.5; }
+  100% { opacity: 0; }
+}
+
+/* Carrying: front arm stretched out holding the card; leans back a bit less (the card is heavy). */
 .pet.carrying .pet-arm-front { rotate: -6deg; }
+.pet.walking.carrying .pet-body { animation-name: pet-walk-body-carry; }
+@keyframes pet-walk-body-carry {
+  0% { translate: 0 1px; rotate: 1.5deg; scale: 1.04 0.96; }
+  20% { translate: 0 -2px; rotate: 2.5deg; scale: 0.99 1.015; }
+  50% { translate: 0 1px; rotate: 1.5deg; scale: 1.04 0.96; }
+  70% { translate: 0 -2px; rotate: 0.5deg; scale: 0.99 1.015; }
+  100% { translate: 0 1px; rotate: 1.5deg; scale: 1.04 0.96; }
+}
 .pet.carrying .pet-eye { animation: none; scale: 1 0.8; }
 
 /* Showing it off: both arms up, the sparkle spins. */
@@ -76,6 +125,5 @@
   filter: drop-shadow(0 0 4px var(--spark, #ffd9a8));
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .pet *, .pet-sparkle { animation-duration: 1ms !important; animation-iteration-count: 1 !important; }
-}
+/* No prefers-reduced-motion override here: the pet is opt-in (Settings → Pets), and Windows
+   reports reduced motion whenever "Animation effects" is off, which froze the pet completely. */

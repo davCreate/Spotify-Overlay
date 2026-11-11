@@ -676,9 +676,11 @@
       ? -(cardLeft + cardW * scale + 12)
       : window.innerWidth - cardLeft + petW * scale * (1 - reach) + 12;
     const speed = p.speed || 1;
-    const dur = clamp(Math.abs(startX) / (330 * speed), 0.9, 4.2) * 1000;
-    const stride = petW * scale * 0.8;
-    const stepFor = (px, ms) => clamp(stride / (px / ms), 150, 420).toFixed(0) + 'ms';
+    const dur = clamp(Math.abs(startX) / (290 * speed), 0.9, 4.6) * 1000;
+    // Ground covered per gait cycle (two steps). Short enough that the feet look planted
+    // instead of sliding; the cycle then speeds up or slows down with the walking speed.
+    const stride = petW * scale * 0.46;
+    const stepFor = (px, ms) => clamp(stride / (px / ms), 190, 520).toFixed(0) + 'ms';
     el.pet.style.setProperty('--pet-step', stepFor(Math.abs(startX), dur));
     el.pet.className = 'pet walking carrying' + facing;
     const walkIn = petAnimate(run, el.scaler, [{ translate: startX + 'px 0px' }, { translate: '0px 0px' }], { duration: dur, easing: 'cubic-bezier(.3,.05,.45,1)' });
@@ -712,7 +714,7 @@
     if (!alive()) return;
     const pr = el.pet.getBoundingClientRect();
     const dx = fromLeft ? -(pr.right + 12) : window.innerWidth - pr.left + 12;
-    const outDur = clamp(Math.abs(dx) / (360 * speed), 0.7, 3.6) * 1000;
+    const outDur = clamp(Math.abs(dx) / (320 * speed), 0.7, 4) * 1000;
     el.pet.style.setProperty('--pet-step', stepFor(Math.abs(dx), outDur));
     el.pet.className = 'pet walking' + (fromLeft ? ' facing-left' : '');
     const walkOut = petAnimate(run, el.pet, [{ translate: '0px 0px' }, { translate: (dx / scale) + 'px 0px' }], { duration: outDur, easing: 'cubic-bezier(.5,0,.8,.8)', fill: 'forwards' });

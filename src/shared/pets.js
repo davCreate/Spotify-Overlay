@@ -51,12 +51,14 @@
     </radialGradient>
   </defs>
   <ellipse class="pet-shadow" cx="38" cy="69" rx="24" ry="3" fill="#000" opacity="0.28"/>
+  <circle class="pet-dust pet-dust-a" cx="17" cy="65" r="3" fill="#d9cabb" opacity="0"/>
+  <circle class="pet-dust pet-dust-b" cx="27" cy="66" r="2.6" fill="#d9cabb" opacity="0"/>
   <g class="pet-arm pet-arm-back"><rect x="6" y="33" width="14" height="7" rx="3.5" fill="url(#${id}-limb)"/></g>
   <g class="pet-legs">
-    <rect class="pet-leg pet-leg-b" x="27" y="50" width="6" height="14" rx="2.5" fill="url(#${id}-limb)"/>
-    <rect class="pet-leg pet-leg-b" x="49" y="50" width="6" height="14" rx="2.5" fill="url(#${id}-limb)"/>
-    <rect class="pet-leg pet-leg-a" x="19" y="50" width="6" height="15" rx="2.5" fill="url(#${id}-limb)"/>
-    <rect class="pet-leg pet-leg-a" x="41" y="50" width="6" height="15" rx="2.5" fill="url(#${id}-limb)"/>
+    <rect class="pet-leg pet-leg-b" x="27" y="45" width="6" height="19" rx="2.5" fill="url(#${id}-limb)"/>
+    <rect class="pet-leg pet-leg-b" x="49" y="45" width="6" height="19" rx="2.5" fill="url(#${id}-limb)"/>
+    <rect class="pet-leg pet-leg-a" x="19" y="45" width="6" height="20" rx="2.5" fill="url(#${id}-limb)"/>
+    <rect class="pet-leg pet-leg-a" x="41" y="45" width="6" height="20" rx="2.5" fill="url(#${id}-limb)"/>
   </g>
   <g class="pet-body">
     <g class="pet-antenna">

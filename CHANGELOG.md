@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.0.6] - 2026-11-11
+
+### Fixed
+- The pet stood frozen on Windows when "Animation effects" is turned off in Windows settings. Its animations now always play.
+
+### Changed
+- Better pet walk. Each foot now lifts, reaches forward and plants. The body dips and squashes a little on every step and leans into the walk, while the arms swing and the antenna sways behind. Small dust puffs kick up behind the feet. The step speed now follows the walking speed, so the feet no longer slide across the ground.
+
 ## [1.0.5] - 2026-11-11
 
 ### Added
@@ -56,6 +64,7 @@ All notable changes to this project are documented here. The format is based on 
 - Built-in update checker (Settings → Updates and the tray menu). The Windows installer and Linux AppImage download and install updates in-app; other builds link to the download page. Automatic checks on launch and every 6 hours, with a notification when a new version is out.
 - Unit tests, a smoke-test mode and a CI workflow that builds installers for Windows, macOS and Linux.
 
+[1.0.6]: https://github.com/davCreate/Spotify-Overlay/releases/tag/v1.0.6
 [1.0.5]: https://github.com/davCreate/Spotify-Overlay/releases/tag/v1.0.5
 [1.0.4]: https://github.com/davCreate/Spotify-Overlay/releases/tag/v1.0.4
 [1.0.3]: https://github.com/davCreate/Spotify-Overlay/releases/tag/v1.0.3
